@@ -16,8 +16,12 @@ def main(request, response):
         if request.headers.get(b"sec-fetch-mode") != b"cors":
             return (403, b"Failed"), [], body
 
-        headers.append((b"Access-Control-Allow-Methods", b"*"))
-        headers.append((b"Access-Control-Allow-Headers", b"*"))
+        headers.extend(
+            (
+                (b"Access-Control-Allow-Methods", b"*"),
+                (b"Access-Control-Allow-Headers", b"*"),
+            )
+        )
     else:
         body = json.dumps({
             u"dest": isomorphic_decode(request.headers.get(b"sec-fetch-dest", b"")),

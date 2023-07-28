@@ -14,7 +14,5 @@ def main(request, response):
   else:
     body = body.replace(b"%GREETING_TEXT%", b"")
 
-  headers = []
-  headers.append((b"Content-Type", b"text/javascript"))
-
+  headers = [(b"Content-Type", b"text/javascript")]
   return headers, body

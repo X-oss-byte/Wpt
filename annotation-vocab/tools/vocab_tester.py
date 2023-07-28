@@ -22,13 +22,8 @@ def load_document_and_cache(url):
     if docCache.has_key(url):
         return docCache[url]
 
-    doc = {
-        'contextUrl': None,
-        'documentUrl': None,
-        'document': ''
-    }
     data = fetch(url)
-    doc['document'] = data;
+    doc = {'contextUrl': None, 'documentUrl': None, 'document': data}
     docCache[url] = doc
     return doc
 
@@ -93,14 +88,10 @@ class Validator(object):
         for (k,v) in js.items():
             if k == 'type':
                 if type(v) == list:
-                    nl = []
-                    for i in v:
-                        if self.rdflib_class_map.has_key(i):
-                            nl.append(self.rdflib_class_map[i])
+                    nl = [self.rdflib_class_map[i] for i in v if self.rdflib_class_map.has_key(i)]
                     new['type'] = nl
-                else:
-                    if self.rdflib_class_map.has_key(v):
-                        new['type'] = self.rdflib_class_map[v]
+                elif self.rdflib_class_map.has_key(v):
+                    new['type'] = self.rdflib_class_map[v]
             elif type(v) == dict:
                 # recurse
                 res = self._mk_rdflib_jsonld(v)
@@ -114,11 +105,7 @@ class Validator(object):
         js = json.dumps(d2)
         g = ConjunctiveGraph()
         g.parse(data=js, format='json-ld')
-        if fmt:
-            out = g.serialize(format=fmt)
-            return out
-        else:
-            return g
+        return g.serialize(format=fmt) if fmt else g
 
     def rdf_to_jsonld(self, rdf, fmt):
 
@@ -226,15 +213,18 @@ for p in props:
 for p in props:
     ranges = list(g.objects(p, rdfsrange))
     for r in ranges:
-        if not r in classes and not str(r).startswith("http://www.w3.org/2001/XMLSchema#") and \
-            not r == rdfsresource:
-            print("Found inconsistent property: %s has unknown range" % p)
+        if (
+            r not in classes
+            and not str(r).startswith("http://www.w3.org/2001/XMLSchema#")
+            and r != rdfsresource
+        ):
+            print(f"Found inconsistent property: {p} has unknown range")
 
 for c in classes:
     parents = list(g.objects(c, rdfssco))
     for p in parents:
-        if not p in classes and not p in otherClasses:
-            print("Found inconsistent class: %s has unknown superClass" % c)
+        if p not in classes and p not in otherClasses:
+            print(f"Found inconsistent class: {c} has unknown superClass")
 
 
 print("Done.")

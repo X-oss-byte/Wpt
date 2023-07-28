@@ -4,18 +4,16 @@ from wptserve.utils import isomorphic_encode
 
 def setNoCacheAndCORSHeaders(request, response):
     """Set Cache-Control, CORS and Content-Type headers appropriate for the cookie tests."""
-    headers = [(b"Content-Type", b"application/json"),
-               (b"Access-Control-Allow-Credentials", b"true")]
-
-    origin = b"*"
-    if b"origin" in request.headers:
-        origin = request.headers[b"origin"]
-
-    headers.append((b"Access-Control-Allow-Origin", origin))
-    #headers.append(("Access-Control-Allow-Credentials", "true"))
-    headers.append((b"Cache-Control", b"no-cache"))
-    headers.append((b"Expires", b"Fri, 01 Jan 1990 00:00:00 GMT"))
-
+    origin = request.headers[b"origin"] if b"origin" in request.headers else b"*"
+    headers = [
+        (b"Content-Type", b"application/json"),
+        (b"Access-Control-Allow-Credentials", b"true"),
+        *(
+            (b"Access-Control-Allow-Origin", origin),
+            (b"Cache-Control", b"no-cache"),
+            (b"Expires", b"Fri, 01 Jan 1990 00:00:00 GMT"),
+        ),
+    ]
     return headers
 
 def makeCookieHeader(name, value, otherAttrs):
@@ -23,10 +21,7 @@ def makeCookieHeader(name, value, otherAttrs):
     def makeAV(a, v):
         if None == v or b"" == v:
             return a
-        if isinstance(v, int):
-            return b"%s=%i" % (a, v)
-        else:
-            return b"%s=%s" % (a, v)
+        return b"%s=%i" % (a, v) if isinstance(v, int) else b"%s=%s" % (a, v)
 
     # ensure cookie name is always first
     attrs = [b"%s=%s" % (name, value)]

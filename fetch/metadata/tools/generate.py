@@ -53,21 +53,14 @@ def merge(a, b):
     if type(a) == list:
         return a + b
     if type(a) == dict:
-        merged = {}
-
-        for key in a:
-            if key in b:
-                merged[key] = merge(a[key], b[key])
-            else:
-                merged[key] = a[key]
-
+        merged = {key: merge(a[key], b[key]) if key in b else a[key] for key in a}
         for key in b:
-            if not key in a:
+            if key not in a:
                 merged[key] = b[key]
 
         return merged
 
-    raise Exception('Cannot merge {} type'.format(type(a).__name__))
+    raise Exception(f'Cannot merge {type(a).__name__} type')
 
 def product(a, b):
     '''
@@ -93,39 +86,36 @@ def product(a, b):
     result = []
 
     for a_object in a:
-        for b_object in b:
-            result.append(merge(a_object, b_object))
-
+        result.extend(merge(a_object, b_object) for b_object in b)
     return result
 
 def make_provenance(project_root, cases, template):
-    return '\n'.join([
-        'This test was procedurally generated. Please do not modify it directly.',
-        'Sources:',
-        '- {}'.format(os.path.relpath(cases, project_root)),
-        '- {}'.format(os.path.relpath(template, project_root))
-    ])
+    return '\n'.join(
+        [
+            'This test was procedurally generated. Please do not modify it directly.',
+            'Sources:',
+            f'- {os.path.relpath(cases, project_root)}',
+            f'- {os.path.relpath(template, project_root)}',
+        ]
+    )
 
 def collection_filter(obj, title):
     if not obj:
-        return 'no {}'.format(title)
+        return f'no {title}'
 
     members = []
     for name, value in obj.items():
         if value == '':
             members.append(name)
         else:
-            members.append('{}={}'.format(name, value))
+            members.append(f'{name}={value}')
 
-    return '{}: {}'.format(title, ', '.join(members))
+    return f"{title}: {', '.join(members)}"
 
 def pad_filter(value, side, padding):
     if not value:
         return ''
-    if side == 'start':
-        return padding + value
-
-    return value + padding
+    return padding + value if side == 'start' else value + padding
 
 def main(config_file):
     with open(config_file, 'r') as handle:
@@ -150,17 +140,11 @@ def main(config_file):
             templates[template_name] = environment.from_string(handle.read())
 
     for case in config['cases']:
-        unused_templates = set(templates) - set(case['template_axes'])
-
-        # This warning is intended to help authors avoid mistakenly omitting
-        # templates. It can be silenced by extending the`template_axes`
-        # dictionary with an empty list for templates which are intentionally
-        # unused.
-        if unused_templates:
+        if unused_templates := set(templates) - set(case['template_axes']):
             print(
                 'Warning: case does not reference the following templates:'
             )
-            print('\n'.join('- {}'.format(name) for name in unused_templates))
+            print('\n'.join(f'- {name}' for name in unused_templates))
 
         common_axis = product(
             case['common_axis'], [case.get('all_subtests', {})]
@@ -169,7 +153,7 @@ def main(config_file):
         for template_name, template_axis in case['template_axes'].items():
             subtests[template_name].extend(product(common_axis, template_axis))
 
-    for template_name, template in templates.items():
+    for template_name, value in templates.items():
         provenance = make_provenance(
             PROJECT_ROOT,
             config_file,
@@ -186,10 +170,12 @@ def main(config_file):
         )
         for filename, some_subtests in subtests_by_filename:
             with open(filename, 'w') as handle:
-                handle.write(templates[template_name].render(
-                    subtests=list(some_subtests),
-                    provenance=provenance
-                ) + '\n')
+                handle.write(
+                    value.render(
+                        subtests=list(some_subtests), provenance=provenance
+                    )
+                    + '\n'
+                )
 
 if __name__ == '__main__':
     main('fetch-metadata.conf.yml')

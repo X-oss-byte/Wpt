@@ -7,13 +7,11 @@ util = importlib.import_module("common.security-features.scope.util")
 def main(request, response):
   policyDeliveries = json.loads(request.GET.first(b'policyDeliveries', b'[]'))
   worker_type = request.GET.first(b'type', b'classic')
-  commonjs_url = u'%s://%s:%s/common/security-features/resources/common.sub.js' % (
-      request.url_parts.scheme, request.url_parts.hostname,
-      request.url_parts.port)
+  commonjs_url = f'{request.url_parts.scheme}://{request.url_parts.hostname}:{request.url_parts.port}/common/security-features/resources/common.sub.js'
   if worker_type == b'classic':
-    import_line = u'importScripts("%s");' % commonjs_url
+    import_line = f'importScripts("{commonjs_url}");'
   else:
-    import_line = u'import "%s";' % commonjs_url
+    import_line = f'import "{commonjs_url}";'
 
   maybe_additional_headers = {}
   error = u''
@@ -28,9 +26,9 @@ def main(request, response):
       elif delivery[u'key'] == u'upgradeInsecureRequests' and delivery[u'value'] == u'upgrade':
         maybe_additional_headers[b'Content-Security-Policy'] = b'upgrade-insecure-requests'
       else:
-        error = u'invalid delivery key for http-rp: %s' % delivery[u'key']
+        error = f"invalid delivery key for http-rp: {delivery['key']}"
     else:
-      error = u'invalid deliveryType: %s' % delivery[u'deliveryType']
+      error = f"invalid deliveryType: {delivery['deliveryType']}"
 
   handler = lambda: util.get_template(u'worker.js.template') % ({
       u'import': import_line,

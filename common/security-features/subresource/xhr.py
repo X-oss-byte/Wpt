@@ -4,8 +4,7 @@ import importlib
 subresource = importlib.import_module("common.security-features.subresource.subresource")
 
 def generate_payload(server_data):
-    data = (u'{"headers": %(headers)s}') % server_data
-    return data
+    return (u'{"headers": %(headers)s}') % server_data
 
 def main(request, response):
     subresource.respond(request,

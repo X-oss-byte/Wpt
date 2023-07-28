@@ -15,7 +15,7 @@ def main(request, response):
         if arg.startswith(b"ignored"):
             continue
         elif arg.endswith(b"ms"):
-            sleep.sleep_at_least(float(arg[0:-2]))
+            sleep.sleep_at_least(float(arg[:-2]))
         elif arg.startswith(b"redirect:"):
             return (302, u"WEBPERF MARKETING"), [(b"Location", unquote(isomorphic_decode(arg[9:])))], u"TEST"
 

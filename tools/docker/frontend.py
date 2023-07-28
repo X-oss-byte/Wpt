@@ -60,8 +60,9 @@ def lookup_tag(tag):
     import requests
     org, repo_version = tag.split("/", 1)
     repo, version = repo_version.rsplit(":", 1)
-    resp = requests.get("https://hub.docker.com/v2/repositories/%s/%s/tags/%s" %
-                        (org, repo, version))
+    resp = requests.get(
+        f"https://hub.docker.com/v2/repositories/{org}/{repo}/tags/{version}"
+    )
     if resp.status_code == 200:
         return True
     if resp.status_code == 404:
@@ -86,7 +87,7 @@ def push(venv, tag=None, force=False, *args, **kwargs):
         if not force:
             sys.exit(1)
     if tag is None:
-        logger.info("Using tag %s from .taskcluster.yml" % taskcluster_tag)
+        logger.info(f"Using tag {taskcluster_tag} from .taskcluster.yml")
         tag = taskcluster_tag
 
     tag_re = re.compile(r"webplatformtests/wpt:\d\.\d+")
@@ -97,7 +98,7 @@ def push(venv, tag=None, force=False, *args, **kwargs):
 
     if lookup_tag(tag):
         # No override for this case
-        logger.critical("Tag %s already exists" % tag)
+        logger.critical(f"Tag {tag} already exists")
         sys.exit(1)
 
     build(tag)
@@ -125,15 +126,23 @@ def run(*args, **kwargs):
         build()
 
     args = ["docker", "run"]
-    args.extend(["--security-opt", "seccomp:%s" %
-                 os.path.join(wpt_root, "tools", "docker", "seccomp.json")])
+    args.extend(
+        [
+            "--security-opt",
+            f'seccomp:{os.path.join(wpt_root, "tools", "docker", "seccomp.json")}',
+        ]
+    )
     if kwargs["privileged"]:
         args.append("--privileged")
     if kwargs["checkout"]:
-        args.extend(["--env", "REF==%s" % kwargs["checkout"]])
+        args.extend(["--env", f'REF=={kwargs["checkout"]}'])
     else:
-        args.extend(["--mount",
-                     "type=bind,source=%s,target=/home/test/web-platform-tests" % wpt_root])
+        args.extend(
+            [
+                "--mount",
+                f"type=bind,source={wpt_root},target=/home/test/web-platform-tests",
+            ]
+        )
     args.extend(["-it", kwargs["tag"]])
 
     proc = subprocess.Popen(args)

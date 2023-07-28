@@ -27,16 +27,10 @@ def main(request, response):
     redirect_count = int(request.GET.first(b"redirect_count"))
     final_resource = request.GET.first(b"final_resource")
 
-    tao_value = None
     tao = b"tao" + isomorphic_encode(str(step))
-    if tao in request.GET:
-        tao_value = request.GET.first(tao)
-
-    redirect_url = b""
+    tao_value = request.GET.first(tao) if tao in request.GET else None
     origin = b"origin" + isomorphic_encode(str(step))
-    if origin in request.GET:
-        redirect_url = request.GET.first(origin)
-
+    redirect_url = request.GET.first(origin) if origin in request.GET else b""
     if step == redirect_count:
         redirect_url += final_resource
     else:

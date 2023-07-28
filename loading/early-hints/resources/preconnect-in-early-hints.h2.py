@@ -4,7 +4,7 @@ import os
 def handle_headers(frame, request, response):
     # Send a 103 response.
     resource_origin = request.GET.first(b"resource-origin").decode()
-    link_header_value = "<{}>; rel=preconnect".format(resource_origin)
+    link_header_value = f"<{resource_origin}>; rel=preconnect"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),

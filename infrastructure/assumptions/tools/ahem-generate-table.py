@@ -67,31 +67,27 @@ def build_header(is_test, rel, href):
     rv = [doctype, title]
 
     if rel != None and href != None:
-        rv.append('<link rel="%s" href="%s">' % (rel, href))
+        rv.append(f'<link rel="{rel}" href="{href}">')
 
     rv.append(style_open)
 
-    if not is_test:
-        if rel == None and href == None:
-            # ahem-notref.html
-            rv.append(style_table_font_unspecified)
-        else:
-            # ahem-ref.html
-            rv.append(style_font_face)
-            rv.append(style_table_font_specified)
-    else:
+    if is_test:
         # ahem.html
         rv.append(style_table_font_specified)
 
+    elif rel is None and href is None:
+        # ahem-notref.html
+        rv.append(style_table_font_unspecified)
+    else:
+        rv.extend((style_font_face, style_table_font_specified))
     rv.append(style_close)
 
     return "\n".join(rv)
 
 
 def build_table():
-    rv = ["\n"]
+    rv = ["\n", "<table>\n"]
 
-    rv.append("<table>\n")
     for row in grouper(per_row, chars_sorted):
         rv.append(" " * 4 + "<tr>\n")
         for codepoint in row:
@@ -123,5 +119,5 @@ for index, case in enumerate(cases):
     header = build_header(is_test, rel, href)
 
     with open(file, "w") as file:
-        file.write("%s%s" % (header, table))
+        file.write(f"{header}{table}")
 

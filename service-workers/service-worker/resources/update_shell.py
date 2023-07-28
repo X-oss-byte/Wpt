@@ -19,7 +19,7 @@ def main(request, response):
              (b'Content-Type', b'application/javascript')]
 
   # Return a different script for each access.
-  timestamp = u'// %s %s' % (time.time(), random.random())
+  timestamp = f'// {time.time()} {random.random()}'
   body = isomorphic_encode(timestamp) + b'\n'
 
   # Inject the file into the response.

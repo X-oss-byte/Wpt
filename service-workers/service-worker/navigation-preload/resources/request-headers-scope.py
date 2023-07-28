@@ -3,7 +3,7 @@ import json
 from wptserve.utils import isomorphic_decode
 
 def main(request, response):
-    normalized = dict()
+    normalized = {}
 
     for key, values in dict(request.headers).items():
         values = [isomorphic_decode(value) for value in values]

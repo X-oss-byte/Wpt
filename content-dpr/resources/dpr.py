@@ -11,13 +11,10 @@ def main(request, response):
     name = values.first(b'name')
     type = values.first(b'mimeType')
     dpr = values.first(b'dpr')
-    double = None
-    if b'double' in values:
-        double = values.first(b'double')
+    double = values.first(b'double') if b'double' in values else None
     image_path = request.doc_root + u"/".join(request.url_parts[2].split(u"/")[:-1]) + u"/" + isomorphic_decode(name)
-    f = open(image_path, "rb")
-    buff = f.read()
-    f.close()
+    with open(image_path, "rb") as f:
+        buff = f.read()
     response.headers.set(b"Content-Type", type)
     response.headers.set(b"Content-DPR", dpr)
     if double:

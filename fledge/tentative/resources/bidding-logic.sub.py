@@ -13,11 +13,7 @@ def main(request, response):
         response.close_connection = True
         return
 
-    if error == b"http-error":
-        response.status = (404, b"OK")
-    else:
-        response.status = (200, b"OK")
-
+    response.status = (404, b"OK") if error == b"http-error" else (200, b"OK")
     if error == b"wrong-content-type":
         response.headers.set(b"Content-Type", b"application/json")
     elif error != b"no-content-type":

@@ -47,7 +47,7 @@ def check_cert(certificate, checkend_seconds):
         "-noout",
         "-in", certificate
     ]
-    logger.info("Running '%s'" % " ".join(cmd))
+    logger.info(f"""Running '{" ".join(cmd)}'""")
     return subprocess.call(cmd)
 
 
@@ -58,7 +58,7 @@ def regen_certs():
         "--config", "tools/certs/config.json",
         "--exit-after-start",
     ]
-    logger.info("Running '%s'" % " ".join(cmd))
+    logger.info(f"""Running '{" ".join(cmd)}'""")
     subprocess.check_call(cmd)
 
 
@@ -99,4 +99,6 @@ def run(**kwargs):
         regen_certs()
         regen_chrome_spki()
     else:
-        logger.info("Certificates are still valid for at least %s seconds, skipping regeneration" % checkend_seconds)
+        logger.info(
+            f"Certificates are still valid for at least {checkend_seconds} seconds, skipping regeneration"
+        )

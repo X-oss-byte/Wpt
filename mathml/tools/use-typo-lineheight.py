@@ -44,7 +44,7 @@ font.os2_use_typo_metrics = True
 
 path = "../../fonts/math/lineheight%d-typolineheight%d.woff" % (
     winHeight, typoLineHeight)
-print("Generating %s..." % path, end="")
+print(f"Generating {path}...", end="")
 font.generate(path)
 if font.validate() == 0:
     print(" done.")

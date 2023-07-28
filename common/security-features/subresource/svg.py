@@ -17,8 +17,7 @@ def generate_payload_embedded(request, server_data):
         u"property": isomorphic_decode(request.GET[b"property"])}
 
 def generate_report_headers_payload(request, server_data):
-    stashed_data = request.server.stash.take(request.GET[b"id"])
-    return stashed_data
+    return request.server.stash.take(request.GET[b"id"])
 
 def main(request, response):
     handler = lambda data: generate_payload(request, data)

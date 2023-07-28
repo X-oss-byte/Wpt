@@ -36,7 +36,7 @@ for curdir, subdirList, fileList in os.walk(DEFDIR, topdown=True):
     try:
       testJSON = json.load(open(theFile, "r"))
     except ValueError as e:
-      print("parse of " + theFile + " failed: " + e[0])
+      print(f"parse of {theFile} failed: {e[0]}")
     else:
       theFile = re.sub("\.\./", "", theFile)
       defList.append(theFile)
@@ -61,7 +61,7 @@ for curdir, subdirList, fileList in os.walk(TESTTREE, topdown=True):
     try:
       testJSON = json.load(open(theFile, "r"))
     except ValueError as e:
-      print("parse of " + theFile + " failed: " + e[0])
+      print(f"parse of {theFile} failed: {e[0]}")
     else:
       try:
         testType = testJSON['testType']
@@ -91,10 +91,9 @@ for curdir, subdirList, fileList in os.walk(TESTTREE, topdown=True):
       target = re.sub("\.test",suffix, theFile)
 
       try:
-        out = open(target, "w")
-        out.write(tcopy)
-        out.close()
+        with open(target, "w") as out:
+          out.write(tcopy)
       except:
-        print("Failed to create "+target)
+        print(f"Failed to create {target}")
       else:
-        print("Created " + target)
+        print(f"Created {target}")

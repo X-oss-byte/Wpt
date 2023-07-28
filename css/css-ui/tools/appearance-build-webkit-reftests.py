@@ -12,7 +12,11 @@ assert parentdir.endswith('/css-ui')
 
 for filename in os.listdir(parentdir):
     path = os.path.join(parentdir, filename)
-    if os.path.isfile(path) and re_testname.search(filename) and not filename in files:
+    if (
+        os.path.isfile(path)
+        and re_testname.search(filename)
+        and filename not in files
+    ):
         with open(path, "r") as file:
             files[filename] = file.read()
 

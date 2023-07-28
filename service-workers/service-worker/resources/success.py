@@ -2,7 +2,8 @@ def main(request, response):
     headers = []
 
     if b"ACAOrigin" in request.GET:
-        for item in request.GET[b"ACAOrigin"].split(b","):
-            headers.append((b"Access-Control-Allow-Origin", item))
-
+        headers.extend(
+            (b"Access-Control-Allow-Origin", item)
+            for item in request.GET[b"ACAOrigin"].split(b",")
+        )
     return headers, b"{ \"result\": \"success\" }"

@@ -9,6 +9,6 @@ def main(request, response):
     response.headers.set(b"Content-type", b"text/plain")
     response.write_status_headers()
     time.sleep(delay)
-    for i in range(count):
+    for _ in range(count):
         response.writer.write_content(b"TEST_TRICKLE\n")
         time.sleep(delay)

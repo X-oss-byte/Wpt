@@ -38,8 +38,11 @@ def main(request, response):
     # Set the cors enabled headers.
     origin = request.headers.get(b"Origin")
     if origin is not None and origin != b"null":
-        headers.append((b"Access-Control-Allow-Origin", origin))
-        headers.append((b"Access-Control-Allow-Credentials", 'true'))
-
+        headers.extend(
+            (
+                (b"Access-Control-Allow-Origin", origin),
+                (b"Access-Control-Allow-Credentials", 'true'),
+            )
+        )
     body = b"var dummy='value';"
     return headers, body

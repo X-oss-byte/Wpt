@@ -71,17 +71,14 @@ class Ruleset:
         else:
             target = self.include
 
-        target.append(re.compile("^%s" % rule))
+        target.append(re.compile(f"^{rule}"))
 
     def __call__(self, path):
         path = _path_norm(path)
         for item in self.exclude:
             if item.match(path):
                 return False
-        for item in self.include:
-            if item.match(path):
-                return True
-        return False
+        return any(item.match(path) for item in self.include)
 
     def __repr__(self):
         subs = tuple(",".join(item.pattern for item in target)
@@ -91,13 +88,12 @@ class Ruleset:
 
 def get_paths(**kwargs):
     if kwargs["revish"] is None:
-        revish = "%s..HEAD" % branch_point()
+        revish = f"{branch_point()}..HEAD"
     else:
         revish = kwargs["revish"]
 
     changed, _ = files_changed(revish, ignore_rules=[])
-    all_changed = {os.path.relpath(item, wpt_root) for item in set(changed)}
-    return all_changed
+    return {os.path.relpath(item, wpt_root) for item in set(changed)}
 
 
 def get_jobs(paths, **kwargs):
@@ -106,14 +102,14 @@ def get_jobs(paths, **kwargs):
 
     jobs = set()
 
-    rules = {}
     includes = kwargs.get("includes")
     if includes is not None:
         includes = set(includes)
-    for key, value in job_path_map.items():
-        if includes is None or key in includes:
-            rules[key] = Ruleset(value)
-
+    rules = {
+        key: Ruleset(value)
+        for key, value in job_path_map.items()
+        if includes is None or key in includes
+    }
     for path in paths:
         for job in list(rules.keys()):
             ruleset = rules[job]
@@ -143,8 +139,7 @@ def create_parser():
 def run(**kwargs):
     paths = get_paths(**kwargs)
     jobs = get_jobs(paths, **kwargs)
-    if not kwargs["includes"]:
-        for item in sorted(jobs):
-            print(item)
-    else:
+    if kwargs["includes"]:
         return 0 if set(kwargs["includes"]).issubset(jobs) else 1
+    for item in sorted(jobs):
+        print(item)

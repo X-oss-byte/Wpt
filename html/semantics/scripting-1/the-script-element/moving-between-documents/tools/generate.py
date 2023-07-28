@@ -57,5 +57,5 @@ for timing in ["before-prepare", "after-prepare", "move-back"]:
           if timing != "before-prepare" and inlineOrExternal == "inline" and type == "module":
             continue
 
-          with open('%s-%s-%s-%s-%s.html' % (timing, destType, result, inlineOrExternal, type), 'w') as f:
+          with open(f'{timing}-{destType}-{result}-{inlineOrExternal}-{type}.html', 'w') as f:
             f.write(template % (timing, destType, result, inlineOrExternal, type))

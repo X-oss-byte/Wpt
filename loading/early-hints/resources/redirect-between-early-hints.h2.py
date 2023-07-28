@@ -2,7 +2,7 @@ import os
 
 
 def _send_early_hints(preload, writer):
-    link_header_value = "<{}>; rel=preload; as=script".format(preload)
+    link_header_value = f"<{preload}>; rel=preload; as=script"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),
@@ -22,10 +22,10 @@ def handle_headers(frame, request, response):
             if key == b"test-step":
                 params.append("test-step=final-response")
             else:
-                params.append("{}={}".format(key.decode(), values[0].decode()))
+                params.append(f"{key.decode()}={values[0].decode()}")
 
         redirect_url = request.GET.first(b"redirect-url").decode()
-        location = "{}?{}".format(redirect_url, "&".join(params))
+        location = f'{redirect_url}?{"&".join(params)}'
 
         response.status = 302
         response.headers["location"] = location
@@ -38,7 +38,7 @@ def handle_headers(frame, request, response):
         response.headers["content-type"] = "text/html"
         response.write_status_headers()
     else:
-        raise Exception("Invalid step: {}".format(step))
+        raise Exception(f"Invalid step: {step}")
 
 
 def main(request, response):

@@ -66,8 +66,7 @@ def create_url(request,
         elif parsed.scheme == u"wss":
             scheme = u"ws"
         else:
-            raise ValueError(u"Downgrade redirection: Invalid scheme '%s'" %
-                             parsed.scheme)
+            raise ValueError(f"Downgrade redirection: Invalid scheme '{parsed.scheme}'")
         hostname = parsed.netloc.split(u':')[0]
         port = request.server.config[u"ports"][parsed.scheme][0]
         destination_netloc = u":".join([hostname, str(port)])
@@ -78,14 +77,15 @@ def create_url(request,
     parsed_query = parse_qsl(parsed.query, keep_blank_values=True)
     parsed_query = [x for x in parsed_query if x[0] != query_parameter_to_remove]
 
-    destination_url = urlunsplit(SplitResult(
-        scheme = scheme,
-        netloc = destination_netloc,
-        path = parsed.path,
-        query = urlencode(parsed_query),
-        fragment = None))
-
-    return destination_url
+    return urlunsplit(
+        SplitResult(
+            scheme=scheme,
+            netloc=destination_netloc,
+            path=parsed.path,
+            query=urlencode(parsed_query),
+            fragment=None,
+        )
+    )
 
 
 def preprocess_redirection(request, response):
@@ -107,7 +107,9 @@ def preprocess_redirection(request, response):
     elif redirection == b"swap-origin":
         redirect_url = create_url(request, swap_origin=True)
     else:
-        raise ValueError(u"Invalid redirection type '%s'" % isomorphic_decode(redirection))
+        raise ValueError(
+            f"Invalid redirection type '{isomorphic_decode(redirection)}'"
+        )
 
     redirect(redirect_url, response)
     return True
@@ -124,20 +126,17 @@ def preprocess_stash_action(request, response):
     path = request.GET[b"path"] if b"path" in request.GET \
            else isomorphic_encode(request.url.split(u'?')[0])
 
-    if action == b"put":
+    if action == b"purge":
+        value = stash.take(key=key, path=path)
+        return False
+    elif action == b"put":
         value = isomorphic_decode(request.GET[b"value"])
         stash.take(key=key, path=path)
         stash.put(key=key, value=value, path=path)
         response_data = json.dumps({u"status": u"success", u"result": isomorphic_decode(key)})
-    elif action == b"purge":
-        value = stash.take(key=key, path=path)
-        return False
     elif action == b"take":
         value = stash.take(key=key, path=path)
-        if value is None:
-            status = u"allowed"
-        else:
-            status = u"blocked"
+        status = u"allowed" if value is None else u"blocked"
         response_data = json.dumps({u"status": status, u"result": value})
     else:
         return False

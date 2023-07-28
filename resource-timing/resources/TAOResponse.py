@@ -51,14 +51,12 @@ def main(request, response):
     elif tao == b'uppercase':
     # non-case-sensitive match for origin, fail
         response.headers.set(b'Timing-Allow-Origin', origin.upper())
-    else:
-        pass
     response.status = 200
     if img:
-      response.headers.set(b"Content-Type", b"image/png")
-      with open(request.doc_root + "/resource-timing/resources/blue.png", "rb") as f:
-        response.content = f.read()
-        f.close()
+        response.headers.set(b"Content-Type", b"image/png")
+        with open(f"{request.doc_root}/resource-timing/resources/blue.png", "rb") as f:
+            response.content = f.read()
+            f.close()
     else:
-      response.headers.set(b"Content-Type", b"text/plain")
-      response.content = "TEST"
+        response.headers.set(b"Content-Type", b"text/plain")
+        response.content = "TEST"

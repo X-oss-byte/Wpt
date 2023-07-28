@@ -16,22 +16,22 @@ def main(request, response):
     for param in request.url_parts.query.split("&"):
         pair = param.split("=", 1)
         if len(pair) != 2:
-            return fail(response, "Bad query parameter: " + param)
+            return fail(response, f"Bad query parameter: {param}")
         # Browsers should escape query params consistently.
         if "%20" in pair[1]:
-            return fail(response, "Query parameter should escape using '+': " + param)
+            return fail(response, f"Query parameter should escape using '+': {param}")
 
         # Hostname can't be empty. The empty string can be a key or interest group name, though.
-        if pair[0] == "hostname" and hostname == None and len(pair[1]) > 0:
+        if pair[0] == "hostname" and hostname is None and len(pair[1]) > 0:
             hostname = pair[1]
             continue
-        if pair[0] == "keys" and keys == None:
+        if pair[0] == "keys" and keys is None:
             keys = list(map(unquote_plus, pair[1].split(",")))
             continue
-        if pair[0] == "interestGroupNames" and interestGroupNames == None:
+        if pair[0] == "interestGroupNames" and interestGroupNames is None:
             interestGroupNames = list(map(unquote_plus, pair[1].split(",")))
             continue
-        return fail(response, "Unexpected query parameter: " + param)
+        return fail(response, f"Unexpected query parameter: {param}")
 
     # "interestGroupNames" and "hostname" are mandatory.
     if not hostname:
@@ -114,9 +114,7 @@ def main(request, response):
         response.headers.set("Data-Version", dataVersion)
     response.headers.set("X-fledge-bidding-signals-format-version", "2")
 
-    if body != None:
-        return body
-    return json.dumps(responseBody)
+    return body if body != None else json.dumps(responseBody)
 
 def fail(response, body):
     response.status = (400, "Bad Request")

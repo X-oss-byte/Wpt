@@ -26,7 +26,7 @@ def main(request, response):
 
     if url:
         filename = url.decode('utf-8').split("?")[0]
-        filepath = "./resource-timing/resources/{}".format(filename)
+        filepath = f"./resource-timing/resources/{filename}"
         response.headers.set(b"Content-Type", b"text/javascript")
         with open(filepath, 'rb') as f:
             filedata = f.read()

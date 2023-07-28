@@ -20,7 +20,7 @@ def downloadWithProgressBar(url, outputDirectory="./", forceDownload=False):
 
     chunkSize = 16 * 1024
     downloaded = 0
-    print("Downloading %s" % url)
+    print(f"Downloading {url}")
     os.umask(0o002)
     with open(fileName, 'wb') as fp:
         while True:

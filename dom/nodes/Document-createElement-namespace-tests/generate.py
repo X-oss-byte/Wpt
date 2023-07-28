@@ -56,7 +56,7 @@ def __main__():
         return
 
     if not os.access(THIS_NAME, os.F_OK):
-        print(u"Must be run from the directory of " + THIS_NAME + u", aborting")
+        print(f"Must be run from the directory of {THIS_NAME}, aborting")
         return
 
     for name in os.listdir(u"."):
@@ -64,15 +64,11 @@ def __main__():
             continue
         os.remove(name)
 
-    manifest = open(u"MANIFEST", u"w")
-
-    for name, contents in FILES:
-        for extension in EXTENSIONS:
-            f = open(name + u"." + extension, u"w")
-            f.write(contents)
-            f.close()
-            manifest.write(u"support " + name + u"." + extension + u"\n")
-
-    manifest.close()
+    with open(u"MANIFEST", u"w") as manifest:
+        for name, contents in FILES:
+            for extension in EXTENSIONS:
+                with open(f"{name}.{extension}", u"w") as f:
+                    f.write(contents)
+                manifest.write(f"support {name}.{extension}" + u"\n")
 
 __main__()

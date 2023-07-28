@@ -46,9 +46,9 @@ def permute_expansion(expansion,
 
     for artifact_value in expansion[artifact_key]:
         selection[artifact_key] = artifact_value
-        for next_selection in permute_expansion(expansion, artifact_order,
-                                                selection, artifact_index + 1):
-            yield next_selection
+        yield from permute_expansion(
+            expansion, artifact_order, selection, artifact_index + 1
+        )
 
 
 # Dumps the test config `selection` into a serialized JSON string.
@@ -109,7 +109,7 @@ def get_csp_value(value):
         return "worker-src 'self'"
     if value == 'worker-src-none':
         return "worker-src 'none'"
-    raise Exception('Invalid delivery_value: %s' % value)
+    raise Exception(f'Invalid delivery_value: {value}')
 
 def handle_deliveries(policy_deliveries):
     '''
@@ -126,15 +126,13 @@ def handle_deliveries(policy_deliveries):
             continue
         if delivery.key == 'referrerPolicy':
             if delivery.delivery_type == 'meta':
-                meta += \
-                    '<meta name="referrer" content="%s">' % delivery.value
+                meta += f'<meta name="referrer" content="{delivery.value}">'
             elif delivery.delivery_type == 'http-rp':
                 headers['Referrer-Policy'] = delivery.value
                 # TODO(kristijanburnik): Limit to WPT origins.
                 headers['Access-Control-Allow-Origin'] = '*'
             else:
-                raise Exception(
-                    'Invalid delivery_type: %s' % delivery.delivery_type)
+                raise Exception(f'Invalid delivery_type: {delivery.delivery_type}')
         elif delivery.key == 'mixedContent':
             assert (delivery.value == 'opt-in')
             if delivery.delivery_type == 'meta':
@@ -143,8 +141,7 @@ def handle_deliveries(policy_deliveries):
             elif delivery.delivery_type == 'http-rp':
                 headers['Content-Security-Policy'] = 'block-all-mixed-content'
             else:
-                raise Exception(
-                    'Invalid delivery_type: %s' % delivery.delivery_type)
+                raise Exception(f'Invalid delivery_type: {delivery.delivery_type}')
         elif delivery.key == 'contentSecurityPolicy':
             csp_value = get_csp_value(delivery.value)
             if delivery.delivery_type == 'meta':
@@ -153,8 +150,7 @@ def handle_deliveries(policy_deliveries):
             elif delivery.delivery_type == 'http-rp':
                 headers['Content-Security-Policy'] = csp_value
             else:
-                raise Exception(
-                    'Invalid delivery_type: %s' % delivery.delivery_type)
+                raise Exception(f'Invalid delivery_type: {delivery.delivery_type}')
         elif delivery.key == 'upgradeInsecureRequests':
             # https://w3c.github.io/webappsec-upgrade-insecure-requests/#delivery
             assert (delivery.value == 'upgrade')
@@ -165,10 +161,9 @@ def handle_deliveries(policy_deliveries):
                 headers[
                     'Content-Security-Policy'] = 'upgrade-insecure-requests'
             else:
-                raise Exception(
-                    'Invalid delivery_type: %s' % delivery.delivery_type)
+                raise Exception(f'Invalid delivery_type: {delivery.delivery_type}')
         else:
-            raise Exception('Invalid delivery_key: %s' % delivery.key)
+            raise Exception(f'Invalid delivery_key: {delivery.key}')
     return {"meta": meta, "headers": headers}
 
 
@@ -241,16 +236,16 @@ def generate_test_file(spec_directory, test_helper_filenames,
     for scenario in scenarios[1:]:
         assert (scenario['source_context_list'].pop(0) == top_source_context)
 
-    parameters = {}
-
     # Sort scenarios, to avoid unnecessary diffs due to different orders in
     # `scenarios`.
     serialized_scenarios = sorted(
         [dump_test_parameters(scenario) for scenario in scenarios])
 
-    parameters['scenarios'] = ",\n".join(serialized_scenarios).replace(
-        "\n", "\n" + " " * 10)
-
+    parameters = {
+        'scenarios': ",\n".join(serialized_scenarios).replace(
+            "\n", "\n" + " " * 10
+        )
+    }
     test_directory = os.path.dirname(test_filename)
 
     parameters['helper_js'] = ""
@@ -264,7 +259,7 @@ def generate_test_file(spec_directory, test_helper_filenames,
         os.path.join(spec_directory, 'generic', 'spec_json.js'),
         test_directory)
 
-    test_headers_filename = test_filename + ".headers"
+    test_headers_filename = f"{test_filename}.headers"
 
     test_html_template = util.get_template(test_html_template_basename)
     disclaimer_template = util.get_template('disclaimer.template')
@@ -319,15 +314,12 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
             json.dumps(spec_json, indent=2, separators=(',', ': ')))
 
     # Choose a debug/release template depending on the target.
-    html_template = "test.%s.html.template" % target
+    html_template = f"test.{target}.html.template"
 
     artifact_order = test_expansion_schema.keys()
     artifact_order.remove('expansion')
 
-    excluded_selection_pattern = ''
-    for key in artifact_order:
-        excluded_selection_pattern += '%(' + key + ')s/'
-
+    excluded_selection_pattern = ''.join(f'%({key})s/' for key in artifact_order)
     # Create list of excluded tests.
     exclusion_dict = set()
     for excluded_pattern in spec_json['excluded_tests']:
@@ -353,8 +345,8 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
             for selection in permute_expansion(expansion, artifact_order):
                 selection['delivery_key'] = spec_json['delivery_key']
                 selection_path = spec_json['selection_pattern'] % selection
-                if selection_path in output_dict:
-                    if expansion_pattern['expansion'] != 'override':
+                if expansion_pattern['expansion'] != 'override':
+                    if selection_path in output_dict:
                         print("Error: expansion is default in:")
                         print(dump_test_parameters(selection))
                         print("but overrides:")
@@ -377,9 +369,14 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
             except util.ShouldSkip:
                 continue
 
-    for filename in scenarios:
-        generate_test_file(spec_directory, test_helper_filenames,
-                           html_template, filename, scenarios[filename])
+    for filename, value in scenarios.items():
+        generate_test_file(
+            spec_directory,
+            test_helper_filenames,
+            html_template,
+            filename,
+            value,
+        )
 
 
 def merge_json(base, child):
@@ -437,8 +434,8 @@ def main():
     spec_filenames = list(reversed(spec_filenames))
     test_helper_filenames = list(reversed(test_helper_filenames))
 
-    if len(spec_filenames) == 0:
-        print('Error: No spec.src.json is found at %s.' % spec_directory)
+    if not spec_filenames:
+        print(f'Error: No spec.src.json is found at {spec_directory}.')
         return
 
     # Load the default spec JSON file, ...

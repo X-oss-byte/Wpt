@@ -8,14 +8,16 @@ def redirect_response(request, response, visited_count):
   location = b'empty.js'
   if b'Redirect' in request.GET:
       location = isomorphic_encode(unquote(isomorphic_decode(request.GET[b'Redirect'])))
-  return (301,
-  [
-    (b'Cache-Control', b'no-cache, must-revalidate'),
-    (b'Pragma', b'no-cache'),
-    (b'Content-Type', b'application/javascript'),
-    (b'Location', location),
-  ],
-  u'/* %s */' % str(visited_count))
+  return (
+      301,
+      [
+          (b'Cache-Control', b'no-cache, must-revalidate'),
+          (b'Pragma', b'no-cache'),
+          (b'Content-Type', b'application/javascript'),
+          (b'Location', location),
+      ],
+      f'/* {str(visited_count)} */',
+  )
 
 def not_found_response():
   return 404, [(b'Content-Type', b'text/plain')], u"Page not found"
@@ -24,13 +26,11 @@ def ok_response(request, response, visited_count,
                 extra_body=u'', mime_type=b'application/javascript'):
   # |visited_count| is used as a unique id to differentiate responses
   # every time.
-  return (
-    [
+  return [
       (b'Cache-Control', b'no-cache, must-revalidate'),
       (b'Pragma', b'no-cache'),
-      (b'Content-Type', mime_type)
-    ],
-    u'/* %s */ %s' % (str(visited_count), extra_body))
+      (b'Content-Type', mime_type),
+  ], f'/* {str(visited_count)} */ {extra_body}'
 
 def main(request, response):
   key = request.GET[b"Key"]

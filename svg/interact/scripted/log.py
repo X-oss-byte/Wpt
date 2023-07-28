@@ -8,6 +8,6 @@ def main(request, response):
     except:
         response.set_error(400, u"Invalid parameter")
 
-    time.sleep(int(delay))
+    time.sleep(delay)
 
-    return u"log('%s')" % script_id
+    return f"log('{script_id}')"

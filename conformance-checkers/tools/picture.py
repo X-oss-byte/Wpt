@@ -347,20 +347,17 @@ non_errors = {
     "picture-global-attributes": "<picture title=x class=x dir=ltr hidden id=asdf tabindex=0><img src=x alt></picture>",
 }
 
-for key in errors.keys():
+for key, value in errors.items():
     template_error = template
     template_error += '<title>invalid %s</title>\n' % key
-    template_error += errors[key]
-    file = open(os.path.join(ccdir, "html/elements/picture/%s-novalid.html" % key), 'w')
-    file.write(template_error)
-    file.close()
-
-file = open(os.path.join(ccdir, "html/elements/picture/picture-isvalid.html"), 'w')
-file.write(template + '<title>valid picture</title>\n')
-for key in non_errors_in_head.keys():
-    file.write('%s <!-- %s -->\n' % (non_errors_in_head[key], key))
-file.write('<body>\n')
-for key in non_errors.keys():
-    file.write('%s <!-- %s -->\n' % (non_errors[key], key))
-file.close()
+    template_error += value
+    with open(os.path.join(ccdir, f"html/elements/picture/{key}-novalid.html"), 'w') as file:
+        file.write(template_error)
+with open(os.path.join(ccdir, "html/elements/picture/picture-isvalid.html"), 'w') as file:
+    file.write(template + '<title>valid picture</title>\n')
+    for key, value_ in non_errors_in_head.items():
+        file.write('%s <!-- %s -->\n' % (value_, key))
+    file.write('<body>\n')
+    for key, value__ in non_errors.items():
+        file.write('%s <!-- %s -->\n' % (value__, key))
 # vim: ts=4:sw=4

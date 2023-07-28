@@ -1,20 +1,14 @@
 from wptserve.utils import isomorphic_decode
 
 def main(request, response):
-    if b'Status' in request.GET:
-        status = int(request.GET[b"Status"])
-    else:
-        status = 302
-
-    headers = []
-
+    status = int(request.GET[b"Status"]) if b'Status' in request.GET else 302
     url = isomorphic_decode(request.GET[b'Redirect'])
-    headers.append((b"Location", url))
-
+    headers = [(b"Location", url)]
     if b"ACAOrigin" in request.GET:
-        for item in request.GET[b"ACAOrigin"].split(b","):
-            headers.append((b"Access-Control-Allow-Origin", item))
-
+        headers.extend(
+            (b"Access-Control-Allow-Origin", item)
+            for item in request.GET[b"ACAOrigin"].split(b",")
+        )
     for suffix in [b"Headers", b"Methods", b"Credentials"]:
         query = b"ACA%s" % suffix
         header = b"Access-Control-Allow-%s" % suffix

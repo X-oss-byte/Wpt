@@ -5,13 +5,12 @@ from base64 import decodebytes
 from wptserve.utils import isomorphic_decode, isomorphic_encode
 
 def main(request, response):
-    headers = []
-    headers.append((b'X-ServiceWorker-ServerHeader', b'SetInTheServer'))
-
+    headers = [(b'X-ServiceWorker-ServerHeader', b'SetInTheServer')]
     if b"ACAOrigin" in request.GET:
-        for item in request.GET[b"ACAOrigin"].split(b","):
-            headers.append((b"Access-Control-Allow-Origin", item))
-
+        headers.extend(
+            (b"Access-Control-Allow-Origin", item)
+            for item in request.GET[b"ACAOrigin"].split(b",")
+        )
     for suffix in [b"Headers", b"Methods", b"Credentials"]:
         query = b"ACA%s" % suffix
         header = b"Access-Control-Allow-%s" % suffix
@@ -42,39 +41,49 @@ def main(request, response):
           headers.append((b"Content-Type", b"video/ogg"))
           body = open(os.path.join(request.doc_root, u"media", u"movie_5.ogv"), "rb").read()
 
-        length = len(body)
         # If "PartialContent" is specified, the requestor wants to test range
         # requests. For the initial request, respond with "206 Partial Content"
         # and don't send the entire content. Then expect subsequent requests to
         # have a "Range" header with a byte range. Respond with that range.
         if b"PartialContent" in request.GET:
-          if length < 1:
-            return 500, headers, b"file is too small for range requests"
-          start = 0
-          end = length - 1
-          if b"Range" in request.headers:
-            range_header = request.headers[b"Range"]
-            prefix = b"bytes="
-            split_header = range_header[len(prefix):].split(b"-")
-            # The first request might be "bytes=0-". We want to force a range
-            # request, so just return the first byte.
-            if split_header[0] == b"0" and split_header[1] == b"":
+            length = len(body)
+            if length < 1:
+              return 500, headers, b"file is too small for range requests"
+            start = 0
+            end = length - 1
+            if b"Range" in request.headers:
+              range_header = request.headers[b"Range"]
+              prefix = b"bytes="
+              split_header = range_header[len(prefix):].split(b"-")
+              # The first request might be "bytes=0-". We want to force a range
+              # request, so just return the first byte.
+              if split_header[0] == b"0" and split_header[1] == b"":
+                end = start
+              # Otherwise, it is a range request. Respect the values sent.
+              if split_header[0] != b"":
+                start = int(split_header[0])
+              if split_header[1] != b"":
+                end = int(split_header[1])
+            else:
+              # The request doesn't have a range. Force a range request by
+              # returning the first byte.
               end = start
-            # Otherwise, it is a range request. Respect the values sent.
-            if split_header[0] != b"":
-              start = int(split_header[0])
-            if split_header[1] != b"":
-              end = int(split_header[1])
-          else:
-            # The request doesn't have a range. Force a range request by
-            # returning the first byte.
-            end = start
 
-          headers.append((b"Accept-Ranges", b"bytes"))
-          headers.append((b"Content-Length", isomorphic_encode(str(end -start + 1))))
-          headers.append((b"Content-Range", b"bytes %d-%d/%d" % (start, end, length)))
-          chunk = body[start:(end + 1)]
-          return 206, headers, chunk
+            headers.extend(
+                (
+                    (b"Accept-Ranges", b"bytes"),
+                    (
+                        b"Content-Length",
+                        isomorphic_encode(str(end - start + 1)),
+                    ),
+                    (
+                        b"Content-Range",
+                        b"bytes %d-%d/%d" % (start, end, length),
+                    ),
+                )
+            )
+            chunk = body[start:(end + 1)]
+            return 206, headers, chunk
         return headers, body
 
     username = request.auth.username if request.auth.username else b"undefined"
@@ -111,4 +120,4 @@ def main(request, response):
             u"password": isomorphic_decode(password),
             u"cookie": isomorphic_decode(cookie)}
 
-    return headers, u"report( %s )" % json.dumps(data)
+    return headers, f"report( {json.dumps(data)} )"

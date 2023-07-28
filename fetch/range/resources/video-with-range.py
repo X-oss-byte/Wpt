@@ -14,10 +14,7 @@ def main(request, response):
     if range_header_match:
         response.status = 206
         start, end = range_header_match.groups()
-    if range_header:
-        status = 206
-    else:
-        status = 200
+    status = 206 if range_header else 200
     for rewrite in rewrites:
         req_start, req_end = rewrite['request']
         if start == req_start or req_start == '*':
@@ -31,12 +28,22 @@ def main(request, response):
     end = int(end or total_size)
     headers = []
     if status == 206:
-        headers.append((b"Content-Range", b"bytes %d-%d/%d" % (start, end - 1, total_size)))
-        headers.append((b"Accept-Ranges", b"bytes"))
-
-    headers.append((b"Content-Type", b"audio/mp3"))
-    headers.append((b"Content-Length", str(end - start)))
-    headers.append((b"Cache-Control", b"no-cache"))
+        headers.extend(
+            (
+                (
+                    b"Content-Range",
+                    b"bytes %d-%d/%d" % (start, end - 1, total_size),
+                ),
+                (b"Accept-Ranges", b"bytes"),
+            )
+        )
+    headers.extend(
+        (
+            (b"Content-Type", b"audio/mp3"),
+            (b"Content-Length", str(end - start)),
+            (b"Cache-Control", b"no-cache"),
+        )
+    )
     video_file = open(path, "rb")
     video_file.seek(start)
     content = video_file.read(end)

@@ -5,29 +5,22 @@ subresource = importlib.import_module("common.security-features.subresource.subr
 
 def generate_payload(request, server_data):
     data = (u'{"headers": %(headers)s}') % server_data
-    type = b'image'
-    if b"type" in request.GET:
-        type = request.GET[b"type"]
-
+    type = request.GET[b"type"] if b"type" in request.GET else b'image'
     if b"id" in request.GET:
         request.server.stash.put(request.GET[b"id"], data)
 
-    if type == b'image':
-        return subresource.get_template(u"image.css.template") % {u"id": isomorphic_decode(request.GET[b"id"])}
-
-    elif type == b'font':
+    if type == b'font':
         return subresource.get_template(u"font.css.template") % {u"id": isomorphic_decode(request.GET[b"id"])}
 
+    elif type == b'image':
+        return subresource.get_template(u"image.css.template") % {u"id": isomorphic_decode(request.GET[b"id"])}
+
+    elif type == b'stylesheet-only':
+        return u''
     elif type == b'svg':
         return subresource.get_template(u"svg.css.template") % {
             u"id": isomorphic_decode(request.GET[b"id"]),
             u"property": isomorphic_decode(request.GET[b"property"])}
-
-    # A `'stylesheet-only'`-type stylesheet has no nested resources; this is
-    # useful in tests that cover referrers for stylesheet fetches (e.g. fetches
-    # triggered by `@import` statements).
-    elif type == b'stylesheet-only':
-        return u''
 
 def generate_import_rule(request, server_data):
     return u"@import url('%(url)s');" % {
@@ -36,8 +29,7 @@ def generate_import_rule(request, server_data):
     }
 
 def generate_report_headers_payload(request, server_data):
-    stashed_data = request.server.stash.take(request.GET[b"id"])
-    return stashed_data
+    return request.server.stash.take(request.GET[b"id"])
 
 def main(request, response):
     payload_generator = lambda data: generate_payload(request, data)

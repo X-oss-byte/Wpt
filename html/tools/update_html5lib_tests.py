@@ -40,7 +40,7 @@ def get_expected(data):
 
 
 def get_hash(data, container=None):
-    if container == None:
+    if container is None:
         container = ""
     return hashlib.sha1(b"#container%s#data%s"%(container.encode("utf8"),
                                                data.encode("utf8"))).hexdigest()
@@ -115,7 +115,9 @@ def make_tests(script_dir, out_dir, input_file_name, test_data):
         test_list = innerHTML_tests if is_innerHTML else tests
         test_id = get_hash(data, container)
         if test_id in ids_seen:
-            print("WARNING: id %s seen multiple times in file %s this time for test (%s, %s) before for test %s, skipping"%(test_id, input_file_name, container, data, ids_seen[test_id]))
+            print(
+                f"WARNING: id {test_id} seen multiple times in file {input_file_name} this time for test ({container}, {data}) before for test {ids_seen[test_id]}, skipping"
+            )
             continue
         ids_seen[test_id] = (container, data)
         test_list.append({'string_uri_encoded_input':"\"%s\""%urllib.parse.quote(data.encode("utf8")),
@@ -127,19 +129,27 @@ def make_tests(script_dir, out_dir, input_file_name, test_data):
                           })
     path_normal = None
     if tests:
-        path_normal = write_test_file(script_dir, out_dir,
-                                      tests, "html5lib_%s"%input_file_name,
-                                      "html5lib_test.xml")
+        path_normal = write_test_file(
+            script_dir,
+            out_dir,
+            tests,
+            f"html5lib_{input_file_name}",
+            "html5lib_test.xml",
+        )
     path_innerHTML = None
     if innerHTML_tests:
-        path_innerHTML = write_test_file(script_dir, out_dir,
-                                         innerHTML_tests, "html5lib_innerHTML_%s"%input_file_name,
-                                         "html5lib_test_fragment.xml")
+        path_innerHTML = write_test_file(
+            script_dir,
+            out_dir,
+            innerHTML_tests,
+            f"html5lib_innerHTML_{input_file_name}",
+            "html5lib_test_fragment.xml",
+        )
 
     return path_normal, path_innerHTML
 
 def write_test_file(script_dir, out_dir, tests, file_name, template_file_name):
-    file_name = os.path.join(out_dir, file_name + ".html")
+    file_name = os.path.join(out_dir, f"{file_name}.html")
     short_name = os.path.basename(file_name)
 
     with open(os.path.join(script_dir, template_file_name), "r") as f:
@@ -188,7 +198,7 @@ def main():
         for (scripted, test_file) in test_iterator:
             input_file_name = os.path.splitext(os.path.basename(test_file))[0]
             if scripted:
-                input_file_name = "scripted_" + input_file_name
+                input_file_name = f"scripted_{input_file_name}"
             test_data = support.TestData(test_file)
             test_filename, inner_html_file_name = make_tests(script_dir, out_dir,
                                                              input_file_name, test_data)

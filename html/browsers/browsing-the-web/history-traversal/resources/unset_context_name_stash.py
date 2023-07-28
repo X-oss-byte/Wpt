@@ -7,7 +7,4 @@ def main(request, response):
         return b"OK"
     else:
         value = request.server.stash.take(key)
-        if value is not None:
-            return value
-        else:
-            return b"NONE"
+        return value if value is not None else b"NONE"

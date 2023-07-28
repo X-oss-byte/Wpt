@@ -11,16 +11,15 @@ def main(request, response):
   meta = u''
   error = u''
   for delivery in policyDeliveries:
-    if delivery[u'deliveryType'] == u'meta':
-      if delivery[u'key'] == u'referrerPolicy':
-        meta += u'<meta name="referrer" content="%s">' % delivery[u'value']
-      else:
-        error = u'invalid delivery key'
+    if (delivery[u'deliveryType'] == u'meta'
+        and delivery[u'key'] == u'referrerPolicy'):
+      meta += f"""<meta name="referrer" content="{delivery['value']}">"""
+    elif (delivery[u'deliveryType'] == u'meta'
+          or delivery[u'deliveryType'] == u'http-rp'
+          and delivery[u'key'] != u'referrerPolicy'):
+      error = u'invalid delivery key'
     elif delivery[u'deliveryType'] == u'http-rp':
-      if delivery[u'key'] == u'referrerPolicy':
-        maybe_additional_headers[b'Referrer-Policy'] = isomorphic_encode(delivery[u'value'])
-      else:
-        error = u'invalid delivery key'
+      maybe_additional_headers[b'Referrer-Policy'] = isomorphic_encode(delivery[u'value'])
     else:
       error = u'invalid deliveryType'
 

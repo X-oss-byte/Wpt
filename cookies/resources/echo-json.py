@@ -9,7 +9,9 @@ def main(request, response):
 
     values = []
     for key in request.cookies:
-        for value in request.cookies.get_list(key):
-            values.append(u"\"%s\": \"%s\"" % (isomorphic_decode(key), value))
+        values.extend(
+            u"\"%s\": \"%s\"" % (isomorphic_decode(key), value)
+            for value in request.cookies.get_list(key)
+        )
     body = u"{ %s }" % u",".join(values)
     return headers, body

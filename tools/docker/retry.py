@@ -44,7 +44,7 @@ def main() -> None:
         else:
             wait_time = args.factor**n * args.delay
         if n < args.count - 1:
-            log("Command failed, waiting %s seconds to retry" % wait_time)
+            log(f"Command failed, waiting {wait_time} seconds to retry")
             time.sleep(wait_time)
         else:
             log("Command failed, out of retries")

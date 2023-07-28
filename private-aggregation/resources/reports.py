@@ -17,8 +17,7 @@ Status = Tuple[int, str]
 Response = Tuple[Status, List[Header], str]
 
 def get_request_origin(request: Request) -> str:
-  return "%s://%s" % (request.url_parts.scheme,
-                      request.url_parts.netloc)
+  return f"{request.url_parts.scheme}://{request.url_parts.netloc}"
 
 def handle_post_request(request: Request) -> Response:
   """Handles POST request for reports.
@@ -40,9 +39,11 @@ def handle_get_request(request: Request) -> Response:
 
   Retrieves and returns all reports from the stash.
   """
-  headers = [("Content-Type", "application/json")]
   reports = take_reports(request.server.stash, get_request_origin(request))
-  headers.append(("Access-Control-Allow-Origin", "*"))
+  headers = [
+      ("Content-Type", "application/json"),
+      ("Access-Control-Allow-Origin", "*"),
+  ]
   return 200, headers, json.dumps(reports)
 
 

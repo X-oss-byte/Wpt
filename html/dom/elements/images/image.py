@@ -12,12 +12,10 @@ def main(request, response):
       pass
 
     if alreadyServedRequest:
-      body = open(os.path.join(os.path.dirname(isomorphic_decode(__file__)), u"../../../../images/red.png"), u"rb").read()
+        body = open(os.path.join(os.path.dirname(isomorphic_decode(__file__)), u"../../../../images/red.png"), u"rb").read()
     else:
-      request.server.stash.put(key, True);
-      body = open(os.path.join(os.path.dirname(isomorphic_decode(__file__)), u"../../../../images/green.png"), u"rb").read()
-      pass
-
+        request.server.stash.put(key, True);
+        body = open(os.path.join(os.path.dirname(isomorphic_decode(__file__)), u"../../../../images/green.png"), u"rb").read()
     response.writer.write_status(200)
     response.writer.write_header(b"etag", b"abcdef")
     response.writer.write_header(b"content-length", len(body))

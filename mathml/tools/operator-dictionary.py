@@ -10,7 +10,7 @@ NonBreakingSpace = 0x00A0
 
 
 def parseHexaNumber(string):
-    return int("0x%s" % string, 16)
+    return int(f"0x{string}", 16)
 
 
 def parseHexaSequence(string):
@@ -33,11 +33,8 @@ def parseProperties(value, entry, names):
 
 
 def buildKeyAndValueFrom(characters, form):
-    # Concatenate characters and form to build the key.
-    key = ""
-    for c in characters:
-        key += chr(c)
-    key += " " + form
+    key = "".join(chr(c) for c in characters)
+    key += f" {form}"
     # But save characters as an individual property for easier manipulation in
     # this Python script.
     value = {
@@ -57,7 +54,7 @@ xsltTransform = etree.XSLT(etree.parse("./operator-dictionary.xsl"))
 inlineAxisOperators = {}
 with open(inlineAxisOperatorsTXT, mode="r") as f:
     for line in f:
-        hexaString = re.match(r"^U\+([0-9A-F]+)", line).group(1)
+        hexaString = re.match(r"^U\+([0-9A-F]+)", line)[1]
         inlineAxisOperators[parseHexaNumber(hexaString)] = True
 
 operatorDictionary = {}
@@ -80,7 +77,7 @@ for entry in root:
 # Create entries for the non-breaking space in all forms in order to test the
 # default for operators outside the official dictionary.
 for form in ["infix", "prefix", "suffix"]:
-    key, value = buildKeyAndValueFrom(tuple([NonBreakingSpace]), form)
+    key, value = buildKeyAndValueFrom((NonBreakingSpace, ), form)
     operatorDictionary[key] = value
 
 # Create a WOFF font with glyphs for all the operator strings.

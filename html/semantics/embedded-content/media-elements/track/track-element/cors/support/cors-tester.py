@@ -4,7 +4,7 @@ def main(request, response):
     if request.method != u"GET":
         raise HTTPException(400, message=u"Method was not GET")
 
-    if not b"id" in request.GET:
+    if b"id" not in request.GET:
         raise HTTPException(400, message=u"No id")
 
     id = request.GET[b'id']

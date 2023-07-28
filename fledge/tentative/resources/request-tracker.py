@@ -57,7 +57,8 @@ def main(request, response):
         if dispatch == b"track_get":
             if request.method != "GET":
                 server_state["errors"].append(
-                    request.url + " has wrong method: " + request.method)
+                    f"{request.url} has wrong method: {request.method}"
+                )
             else:
                 server_state["trackedRequests"].append(request.url)
 
@@ -71,21 +72,29 @@ def main(request, response):
             contentType = request.headers.get(b"Content-Type", b"missing")
             if request.method != "POST":
                 server_state["errors"].append(
-                    request.url + " has wrong method: " + request.method)
+                    f"{request.url} has wrong method: {request.method}"
+                )
             elif not contentType.startswith(b"text/plain"):
                 server_state["errors"].append(
-                    request.url + " has wrong Content-Type: " +
-                    contentType.decode("utf-8"))
+                    (
+                        f"{request.url} has wrong Content-Type: "
+                        + contentType.decode("utf-8")
+                    )
+                )
             else:
                 server_state["trackedRequests"].append(
-                    request.url + ", body: " + request.body.decode("utf-8"))
+                    f"{request.url}, body: " + request.body.decode("utf-8")
+                )
             stash.put(uuid, server_state)
             return simple_response(request, response, 200, b"OK", b"")
 
         # Report unrecognized dispatch line.
         server_state["errors"].append(
-            request.url + " request with unknown dispatch value received: " +
-            dispatch.decode("utf-8"))
+            (
+                f"{request.url} request with unknown dispatch value received: "
+                + dispatch.decode("utf-8")
+            )
+        )
         stash.put(uuid, server_state)
         return simple_response(request, response, 404, b"Not Found",
                                b"Unrecognized dispatch parameter: " + dispatch)

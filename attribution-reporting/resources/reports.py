@@ -34,8 +34,7 @@ def decode_headers(headers: dict) -> dict:
   }
 
 def get_request_origin(request: Request) -> str:
-  return "%s://%s" % (request.url_parts.scheme,
-                      request.url_parts.netloc)
+  return f"{request.url_parts.scheme}://{request.url_parts.netloc}"
 
 def configure_redirect(request, origin) -> None:
   with request.server.stash.lock:
@@ -65,8 +64,7 @@ def handle_post_report(request: Request, headers: List[Header]) -> Response:
         "message": "Stash successfully cleared.",
     })
 
-  redirect_origin = request.GET.get(CONFIG_REDIRECT)
-  if redirect_origin:
+  if redirect_origin := request.GET.get(CONFIG_REDIRECT):
     configure_redirect(request, redirect_origin)
     return (200, "OK"), headers, json.dumps({
         "code": 200,

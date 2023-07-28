@@ -1,5 +1,3 @@
 def main(request, response):
-    url = b''
-    if b'url' in request.GET:
-        url = request.GET[b'url']
+    url = request.GET[b'url'] if b'url' in request.GET else b''
     return 301, [(b'Location', url),(b'Accept-CH', b'sec-ch-device-memory, device-memory, Sec-CH-DPR, DPR')], u''

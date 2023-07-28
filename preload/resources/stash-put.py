@@ -10,10 +10,7 @@ def main(request, response):
 
     url_dir = u'/'.join(request.url_parts.path.split(u'/')[:-1]) + u'/'
     key = request.GET.first(b"key")
-    if b"value" in request.GET:
-        value = request.GET.first(b"value")
-    else:
-        value = b"value"
+    value = request.GET.first(b"value") if b"value" in request.GET else b"value"
     # value here must be a text string. It will be json.dump()'ed in stash-take.py.
     request.server.stash.put(key, isomorphic_decode(value), url_dir)
     response.headers.set(b'Access-Control-Allow-Origin', b'*')

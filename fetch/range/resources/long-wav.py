@@ -97,18 +97,14 @@ def main(request, response):
         start = int(start)
         end = int(end) if end else 0
 
-        if end:
-            bytes_remaining_to_send = (end + 1) - start
-        else:
-            bytes_remaining_to_send = total_length - start
-
+        bytes_remaining_to_send = (end + 1) - start if end else total_length - start
         wav_header = create_wav_header(sample_rate, bit_depth, channels, duration)
 
         if start < len(wav_header):
             initial_write = wav_header[start:]
 
             if bytes_remaining_to_send < len(initial_write):
-                initial_write = initial_write[0:bytes_remaining_to_send]
+                initial_write = initial_write[:bytes_remaining_to_send]
 
         content_range = b"bytes %d-%d/%d" % (start, end or total_length - 1, total_length)
 

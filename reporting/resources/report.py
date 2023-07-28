@@ -98,11 +98,10 @@ def main(request, response):
 
   # Save cookies.
   if len(request.cookies.keys()) > 0:
-    # Convert everything into strings and dump it into a dict.
-    temp_cookies_dict = {}
-    for dict_key in request.cookies.keys():
-      temp_cookies_dict[isomorphic_decode(dict_key)] = str(
-        request.cookies.get_list(dict_key))
+    temp_cookies_dict = {
+        isomorphic_decode(dict_key): str(request.cookies.get_list(dict_key))
+        for dict_key in request.cookies.keys()
+    }
     with request.server.stash.lock:
       # Clear any existing cookie data for this request before storing new data.
       request.server.stash.take(key=cookie_key)

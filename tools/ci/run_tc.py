@@ -148,22 +148,28 @@ def install_chrome(channel):
     elif channel == "stable":
         deb_archive = "google-chrome-stable_current_amd64.deb"
     else:
-        raise ValueError("Unrecognized release channel: %s" % channel)
+        raise ValueError(f"Unrecognized release channel: {channel}")
 
     dest = os.path.join("/tmp", deb_archive)
-    deb_url = "https://dl.google.com/linux/direct/%s" % deb_archive
+    deb_url = f"https://dl.google.com/linux/direct/{deb_archive}"
     with open(dest, "wb") as f:
         get_download_to_descriptor(f, deb_url)
 
     run(["sudo", "apt-get", "-qqy", "update"])
-    run(["sudo", "gdebi", "-qn", "/tmp/%s" % deb_archive])
+    run(["sudo", "gdebi", "-qn", f"/tmp/{deb_archive}"])
 
 
 def start_xvfb():
-    start(["sudo", "Xvfb", os.environ["DISPLAY"], "-screen", "0",
-           "%sx%sx%s" % (os.environ["SCREEN_WIDTH"],
-                         os.environ["SCREEN_HEIGHT"],
-                         os.environ["SCREEN_DEPTH"])])
+    start(
+        [
+            "sudo",
+            "Xvfb",
+            os.environ["DISPLAY"],
+            "-screen",
+            "0",
+            f'{os.environ["SCREEN_WIDTH"]}x{os.environ["SCREEN_HEIGHT"]}x{os.environ["SCREEN_DEPTH"]}',
+        ]
+    )
     start(["sudo", "fluxbox", "-display", os.environ["DISPLAY"]])
 
 
@@ -192,9 +198,9 @@ def task_url(task_id):
     if root_url == 'https://taskcluster.net':
         queue_base = "https://queue.taskcluster.net/v1/task"
     else:
-        queue_base = root_url + "/api/queue/v1/task"
+        queue_base = f"{root_url}/api/queue/v1/task"
 
-    return "%s/%s" % (queue_base, task_id)
+    return f"{queue_base}/{task_id}"
 
 
 def download_artifacts(artifacts):
@@ -203,21 +209,23 @@ def download_artifacts(artifacts):
         base_url = task_url(artifact["task"])
         if artifact["task"] not in artifact_list_by_task:
             with tempfile.TemporaryFile() as f:
-                get_download_to_descriptor(f, base_url + "/artifacts")
+                get_download_to_descriptor(f, f"{base_url}/artifacts")
                 f.seek(0)
                 artifacts_data = json.load(f)
             artifact_list_by_task[artifact["task"]] = artifacts_data
 
         artifacts_data = artifact_list_by_task[artifact["task"]]
-        print("DEBUG: Got artifacts %s" % artifacts_data)
+        print(f"DEBUG: Got artifacts {artifacts_data}")
         found = False
         for candidate in artifacts_data["artifacts"]:
-            print("DEBUG: candidate: %s glob: %s" % (candidate["name"], artifact["glob"]))
+            print(f'DEBUG: candidate: {candidate["name"]} glob: {artifact["glob"]}')
             if fnmatch.fnmatch(candidate["name"], artifact["glob"]):
                 found = True
-                print("INFO: Fetching aritfact %s from task %s" % (candidate["name"], artifact["task"]))
+                print(
+                    f'INFO: Fetching aritfact {candidate["name"]} from task {artifact["task"]}'
+                )
                 file_name = candidate["name"].rsplit("/", 1)[1]
-                url = base_url + "/artifacts/" + candidate["name"]
+                url = f"{base_url}/artifacts/" + candidate["name"]
                 dest_path = os.path.expanduser(os.path.join("~", artifact["dest"], file_name))
                 dest_dir = os.path.dirname(dest_path)
                 if not os.path.exists(dest_dir):
@@ -228,7 +236,9 @@ def download_artifacts(artifacts):
                 if artifact.get("extract"):
                     unpack(dest_path)
         if not found:
-            print("WARNING: No artifact found matching %s in task %s" % (artifact["glob"], artifact["task"]))
+            print(
+                f'WARNING: No artifact found matching {artifact["glob"]} in task {artifact["task"]}'
+            )
 
 
 def unpack(path):
@@ -239,7 +249,7 @@ def unpack(path):
         with zipfile.ZipFile(path) as archive:
             archive.extractall(dest)
     else:
-        print("ERROR: Don't know how to extract %s" % path)
+        print(f"ERROR: Don't know how to extract {path}")
         raise Exception
 
 
@@ -266,8 +276,6 @@ def setup_environment(args):
 
 
 def setup_repository(args):
-    is_pr = os.environ.get("GITHUB_PULL_REQUEST", "false") != "false"
-
     # Initially task_head points at the same commit as the ref we want to test.
     # However that may not be the same commit as we actually want to test if
     # the branch changed since the decision task ran. The branch may have
@@ -287,6 +295,8 @@ def setup_repository(args):
     # instead of the one at the time the decision task ran.
 
     if args.ref:
+        is_pr = os.environ.get("GITHUB_PULL_REQUEST", "false") != "false"
+
         if is_pr:
             assert args.ref.endswith("/merge")
             expected_head = args.merge_rev
@@ -296,7 +306,25 @@ def setup_repository(args):
         task_head = run(["git", "rev-parse", "task_head"], return_stdout=True).strip()
 
         if task_head != expected_head:
-            if not is_pr:
+            if is_pr:
+                # Convert the refs/pulls/<id>/merge to refs/pulls/<id>/head
+                head_ref = args.ref.rsplit("/", 1)[0] + "/head"
+                try:
+                    remote_head = run(["git", "ls-remote", "origin", head_ref],
+                                      return_stdout=True).split("\t")[0]
+                except subprocess.CalledProcessError:
+                    print(f"CRITICAL: Failed to read remote ref {head_ref}")
+                    sys.exit(1)
+                if remote_head != args.head_rev:
+                    print(
+                        f"CRITICAL: task_head points at {task_head}, expected {expected_head}. This may be because the branch was updated"
+                    )
+                    sys.exit(1)
+                print(
+                    f"INFO: Merge commit changed from {expected_head} to {task_head} due to base branch changes. Running task anyway."
+                )
+
+            else:
                 try:
                     run(["git", "fetch", "origin", expected_head])
                     run(["git", "reset", "--hard", expected_head])
@@ -305,22 +333,6 @@ def setup_repository(args):
                           "unable to fetch expected commit.\n"
                           "This may be because the branch was updated" % (task_head, expected_head))
                     sys.exit(1)
-            else:
-                # Convert the refs/pulls/<id>/merge to refs/pulls/<id>/head
-                head_ref = args.ref.rsplit("/", 1)[0] + "/head"
-                try:
-                    remote_head = run(["git", "ls-remote", "origin", head_ref],
-                                      return_stdout=True).split("\t")[0]
-                except subprocess.CalledProcessError:
-                    print("CRITICAL: Failed to read remote ref %s" % head_ref)
-                    sys.exit(1)
-                if remote_head != args.head_rev:
-                    print("CRITICAL: task_head points at %s, expected %s. "
-                          "This may be because the branch was updated" % (task_head, expected_head))
-                    sys.exit(1)
-                print("INFO: Merge commit changed from %s to %s due to base branch changes. "
-                      "Running task anyway." % (expected_head, task_head))
-
     if os.environ.get("GITHUB_PULL_REQUEST", "false") != "false":
         parents = run(["git", "rev-parse", "task_head^@"],
                       return_stdout=True).strip().split()
@@ -335,15 +347,14 @@ def setup_repository(args):
                   "expected to test the merge of PR into the base")
             commit = run(["git", "rev-parse", "task_head"],
                          return_stdout=True).strip()
-            print("HEAD: %s" % commit)
-            print("Parents: %s" % ", ".join(parents))
+            print(f"HEAD: {commit}")
+            print(f'Parents: {", ".join(parents)}')
             sys.exit(1)
 
-    branch = os.environ.get("GITHUB_BRANCH")
-    if branch:
+    if branch := os.environ.get("GITHUB_BRANCH"):
         # Ensure that the remote base branch exists
         # TODO: move this somewhere earlier in the task
-        run(["git", "fetch", "--quiet", "origin", "%s:%s" % (branch, branch)])
+        run(["git", "fetch", "--quiet", "origin", f"{branch}:{branch}"])
 
     checkout_rev = args.checkout if args.checkout is not None else "task_head"
     checkout_revision(checkout_rev)

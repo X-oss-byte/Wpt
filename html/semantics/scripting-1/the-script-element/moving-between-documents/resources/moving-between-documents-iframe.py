@@ -36,8 +36,8 @@ def main(request, response):
     <body>
   """
 
-  if inlineOrExternal == b"inline" or inlineOrExternal == b"external" or inlineOrExternal == b"empty-src":
-        body += u"""
+  if inlineOrExternal in [b"inline", b"external", b"empty-src"]:
+    body += u"""
       <streaming-element>
     """
 

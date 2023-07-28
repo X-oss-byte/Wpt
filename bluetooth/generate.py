@@ -76,33 +76,28 @@ def GetGeneratedTests():
     """Yields a GeneratedTest for each call in templates in script-tests."""
     bluetooth_tests_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # Read Base Test Template.
-    base_template_file_handle = open(
+    with open(
         os.path.join(
             bluetooth_tests_dir,
             TEMPLATES_DIR,
             'base_test_js.template'
-        ), 'r')
-    base_template_file_data = base_template_file_handle.read().decode('utf-8')
-    base_template_file_handle.close()
-
+        ), 'r') as base_template_file_handle:
+        base_template_file_data = base_template_file_handle.read().decode('utf-8')
     # Get Templates.
 
     template_path = os.path.join(bluetooth_tests_dir, TEMPLATES_DIR)
 
     available_templates = []
     for root, _, files in os.walk(template_path):
-        for template in files:
-            if template.endswith('.js'):
-                available_templates.append(os.path.join(root, template))
-
+        available_templates.extend(
+            os.path.join(root, template)
+            for template in files
+            if template.endswith('.js')
+        )
     # Generate Test Files
     for template in available_templates:
-        # Read template
-        template_file_handle = open(template, 'r')
-        template_file_data = template_file_handle.read().decode('utf-8')
-        template_file_handle.close()
-
+        with open(template, 'r') as template_file_handle:
+            template_file_data = template_file_handle.read().decode('utf-8')
         template_name = os.path.splitext(os.path.basename(template))[0]
 
         # Find function names in multiline pattern: CALLS( [ function_name,function_name2[UUID] ])
@@ -127,20 +122,22 @@ def GetGeneratedTests():
         # replacing CALLS.
         new_test_file_data = new_test_file_data.replace('PREVIOUS_CALL', 'CALLS')
 
-        for call in result.group(1).split('|'):
+        for call in result[1].split('|'):
             # Parse call
             call = call.strip()
             function_name, args, uuid_suffix = re.search(r'(.*?)\((.*)\)(\[UUID\])?', call).groups()
 
             # Replace template tokens
             call_test_file_data = new_test_file_data
-            call_test_file_data = call_test_file_data.replace('CALLS', '{}({})'.format(function_name, args))
+            call_test_file_data = call_test_file_data.replace(
+                'CALLS', f'{function_name}({args})'
+            )
             call_test_file_data = call_test_file_data.replace('FUNCTION_NAME', function_name)
 
             # Get test file name
             group_dir = os.path.basename(os.path.abspath(os.path.join(template, os.pardir)))
 
-            call_test_file_name = 'gen-{}{}.https.window.js'.format(template_name, '-with-uuid' if uuid_suffix else '')
+            call_test_file_name = f"gen-{template_name}{'-with-uuid' if uuid_suffix else ''}.https.window.js"
             call_test_file_path = os.path.join(bluetooth_tests_dir, group_dir, function_name, call_test_file_name)
 
             yield GeneratedTest(call_test_file_data, call_test_file_path, template)
@@ -165,12 +162,9 @@ def main():
         directory = os.path.dirname(generated_test.path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        test_file_handle = open(generated_test.path, 'wb')
-
-        # Write contents
-        test_file_handle.write(generated_test.data.encode('utf-8'))
-        test_file_handle.close()
-
+        with open(generated_test.path, 'wb') as test_file_handle:
+            # Write contents
+            test_file_handle.write(generated_test.data.encode('utf-8'))
     new_generated_files = generated_files - previous_generated_files
     if len(new_generated_files) != 0:
         logging.info('Newly generated tests:')

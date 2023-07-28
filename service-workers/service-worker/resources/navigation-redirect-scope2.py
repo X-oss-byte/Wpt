@@ -3,11 +3,7 @@ def main(request, response):
         headers = [(b"Location", request.GET[b"url"])]
         return 302, headers, b''
 
-    status = 200
-
-    if b"noLocationRedirect" in request.GET:
-        status = 302
-
+    status = 302 if b"noLocationRedirect" in request.GET else 200
     return status, [(b"content-type", b"text/html")], b'''
 <!DOCTYPE html>
 <script>

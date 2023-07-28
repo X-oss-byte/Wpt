@@ -4,7 +4,7 @@ import os
 def handle_headers(frame, request, response):
     # Send a 103 response.
     resource_url = request.GET.first(b"resource-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(resource_url)
+    link_header_value = f"<{resource_url}>; rel=preload; as=script"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),
@@ -15,11 +15,11 @@ def handle_headers(frame, request, response):
     # csp-document-disallow.html always sets CSP to disallow the preload.
     # "disallowed" makes no observable changes in the test. Note that
     # csp-basic.html covers disallowing preloads in Early Hints.
-    assert early_hints_policy == "allowed" or early_hints_policy == "absent"
+    assert early_hints_policy in ["allowed", "absent"]
 
     if early_hints_policy == "allowed":
         resource_origin = request.GET.first(b"resource-origin").decode()
-        csp_value = "script-src 'self' 'unsafe-inline' {}".format(resource_origin)
+        csp_value = f"script-src 'self' 'unsafe-inline' {resource_origin}"
         early_hints.append((b"content-security-policy", csp_value))
 
     response.writer.write_raw_header_frame(headers=early_hints,

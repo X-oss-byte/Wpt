@@ -14,12 +14,12 @@ def main(request, response):
     if request.method == u'OPTIONS':
         return u''
 
-    if b'true' == request.GET.get(b'revalidate', None):
+    if request.GET.get(b'revalidate', None) == b'true':
         response.headers.set(b'Cache-Control', b'max-age=0, must-revalidate')
     else:
         response.headers.set(b'Cache-Control', b'max-age=3600');
 
-    if b'some-etag' == request.headers.get(b'If-None-Match', None):
+    if request.headers.get(b'If-None-Match', None) == b'some-etag':
         response.status = 304
         return u''
 

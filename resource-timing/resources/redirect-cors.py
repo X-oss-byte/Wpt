@@ -9,14 +9,16 @@ def main(request, response):
 
     # Handle CORS-preflights of non-simple requests.
     if request.method == 'OPTIONS':
-      response.status = 204
-      requested_method = request.headers.get(b"Access-Control-Request-Method")
-      if requested_method:
-        response.headers.set(b"Access-Control-Allow-Methods", requested_method)
-      requested_headers = request.headers.get(b"Access-Control-Request-Headers")
-      if requested_headers:
-        response.headers.set(b"Access-Control-Allow-Headers", requested_headers)
+        response.status = 204
+        if requested_method := request.headers.get(
+            b"Access-Control-Request-Method"
+        ):
+            response.headers.set(b"Access-Control-Allow-Methods", requested_method)
+        if requested_headers := request.headers.get(
+            b"Access-Control-Request-Headers"
+        ):
+            response.headers.set(b"Access-Control-Allow-Headers", requested_headers)
     else:
-      location = request.GET.first(b"location")
-      response.status = 302
-      response.headers.set(b"Location", location)
+        location = request.GET.first(b"location")
+        response.status = 302
+        response.headers.set(b"Location", location)

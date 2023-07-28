@@ -25,11 +25,8 @@ def main(request, response):
       response.writer.write(header_value)
     except (KeyError, ValueError) as e:
       response.writer.write(u"No header has been recorded")
-      pass
-
     response.close_connection = True
 
-  ## Record incoming fetch metadata header value
   else:
     try:
       ## Return a serialized JSON object with one member per header. If the ##
@@ -58,9 +55,8 @@ def main(request, response):
     ## Add a valid image Content-Type ##
     if key.startswith(b"image"):
       response.headers.set(b"Content-Type", b"image/png")
-      file = open(os.path.join(request.doc_root, u"media", u"1x1-green.png"), u"rb")
-      image = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"media", u"1x1-green.png"), u"rb") as file:
+        image = file.read()
       return image
 
     ## Return a valid .vtt content for the <track> tag ##
@@ -70,34 +66,30 @@ def main(request, response):
     ## Return a valid SharedWorker ##
     if key.startswith(b"sharedworker"):
       response.headers.set(b"Content-Type", b"application/javascript")
-      file = open(os.path.join(request.doc_root, u"fetch", u"metadata",
-                               u"resources", u"sharedWorker.js"), u"rb")
-      shared_worker = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"fetch", u"metadata",
+                               u"resources", u"sharedWorker.js"), u"rb") as file:
+        shared_worker = file.read()
       return shared_worker
 
     ## Return a valid font content and Content-Type ##
     if key.startswith(b"font"):
       response.headers.set(b"Content-Type", b"application/x-font-ttf")
-      file = open(os.path.join(request.doc_root, u"fonts", u"Ahem.ttf"), u"rb")
-      font = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"fonts", u"Ahem.ttf"), u"rb") as file:
+        font = file.read()
       return font
 
     ## Return a valid audio content and Content-Type ##
     if key.startswith(b"audio"):
       response.headers.set(b"Content-Type", b"audio/mpeg")
-      file = open(os.path.join(request.doc_root, u"media", u"sound_5.mp3"), u"rb")
-      audio = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"media", u"sound_5.mp3"), u"rb") as file:
+        audio = file.read()
       return audio
 
     ## Return a valid video content and Content-Type ##
     if key.startswith(b"video"):
       response.headers.set(b"Content-Type", b"video/mp4")
-      file = open(os.path.join(request.doc_root, u"media", u"A4.mp4"), u"rb")
-      video = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"media", u"A4.mp4"), u"rb") as file:
+        video = file.read()
       return video
 
     ## Return valid style content and Content-Type ##
@@ -113,9 +105,8 @@ def main(request, response):
     ## Return a valid image content and Content-Type for redirect requests ##
     if key.startswith(b"redirect"):
       response.headers.set(b"Content-Type", b"image/jpeg")
-      file = open(os.path.join(request.doc_root, u"media", u"1x1-green.png"), u"rb")
-      image = file.read()
-      file.close()
+      with open(os.path.join(request.doc_root, u"media", u"1x1-green.png"), u"rb") as file:
+        image = file.read()
       return image
 
     ## Return a valid dedicated worker

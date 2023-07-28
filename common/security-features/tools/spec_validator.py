@@ -4,46 +4,38 @@ import json, sys
 
 
 def assert_non_empty_string(obj, field):
-    assert field in obj, 'Missing field "%s"' % field
-    assert isinstance(obj[field], basestring), \
-        'Field "%s" must be a string' % field
-    assert len(obj[field]) > 0, 'Field "%s" must not be empty' % field
+    assert field in obj, f'Missing field "{field}"'
+    assert isinstance(obj[field], basestring), f'Field "{field}" must be a string'
+    assert len(obj[field]) > 0, f'Field "{field}" must not be empty'
 
 
 def assert_non_empty_list(obj, field):
-    assert isinstance(obj[field], list), \
-        '%s must be a list' % field
-    assert len(obj[field]) > 0, \
-        '%s list must not be empty' % field
+    assert isinstance(obj[field], list), f'{field} must be a list'
+    assert len(obj[field]) > 0, f'{field} list must not be empty'
 
 
 def assert_non_empty_dict(obj, field):
-    assert isinstance(obj[field], dict), \
-        '%s must be a dict' % field
-    assert len(obj[field]) > 0, \
-        '%s dict must not be empty' % field
+    assert isinstance(obj[field], dict), f'{field} must be a dict'
+    assert len(obj[field]) > 0, f'{field} dict must not be empty'
 
 
 def assert_contains(obj, field):
-    assert field in obj, 'Must contain field "%s"' % field
+    assert field in obj, f'Must contain field "{field}"'
 
 
 def assert_value_from(obj, field, items):
-    assert obj[field] in items, \
-         'Field "%s" must be from: %s' % (field, str(items))
+    assert obj[field] in items, f'Field "{field}" must be from: {str(items)}'
 
 
 def assert_atom_or_list_items_from(obj, field, items):
-    if isinstance(obj[field], basestring) or isinstance(
-            obj[field], int) or obj[field] is None:
+    if isinstance(obj[field], (basestring, int)) or obj[field] is None:
         assert_value_from(obj, field, items)
         return
 
-    assert isinstance(obj[field], list), '%s must be a list' % field
+    assert isinstance(obj[field], list), f'{field} must be a list'
     for allowed_value in obj[field]:
         assert allowed_value != '*', "Wildcard is not supported for lists!"
-        assert allowed_value in items, \
-            'Field "%s" must be from: %s' % (field, str(items))
+        assert allowed_value in items, f'Field "{field}" must be from: {str(items)}'
 
 
 def assert_contains_only_fields(obj, expected_fields):
@@ -51,8 +43,7 @@ def assert_contains_only_fields(obj, expected_fields):
         assert_contains(obj, expected_field)
 
     for actual_field in obj:
-        assert actual_field in expected_fields, \
-                'Unexpected field "%s".' % actual_field
+        assert actual_field in expected_fields, f'Unexpected field "{actual_field}".'
 
 
 def leaf_values(schema):
@@ -65,7 +56,7 @@ def leaf_values(schema):
 
 
 def assert_value_unique_in(value, used_values):
-    assert value not in used_values, 'Duplicate value "%s"!' % str(value)
+    assert value not in used_values, f'Duplicate value "{str(value)}"!'
     used_values[value] = True
 
 
@@ -207,7 +198,9 @@ def validate(spec_json, details):
         'swap-scheme', 'downgrade'
     ])
     for subresource in leaf_values(test_expansion_schema['subresource']):
-        assert subresource in valid_subresource_names, "Invalid subresource %s" % subresource
+        assert (
+            subresource in valid_subresource_names
+        ), f"Invalid subresource {subresource}"
     # Should be consistent with getSubresourceOrigin() in
     # `/common/security-features/resources/common.sub.js`.
     assert_atom_or_list_items_from(test_expansion_schema, 'origin', [

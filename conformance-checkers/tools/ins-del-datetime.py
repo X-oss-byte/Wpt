@@ -132,44 +132,34 @@ non_errors = {
     "global-date-and-time-timezone-without-colon": "2011-11-12T06:54:39-0800",
 }
 
-for key in errors.keys():
-    error = errors[key]
+for key, value in errors.items():
     template_ins = template
     template_del = template
     template_ins += '<title>%s</title>\n' % key
     template_del += '<title>%s</title>\n' % key
-    template_ins += '<ins datetime="%s"></ins>' % errors[key]
-    template_del += '<del datetime="%s"></del>' % errors[key]
-    ins_file = open(os.path.join(ccdir, "html/elements/ins/%s-novalid.html" % key), 'w')
-    ins_file.write(template_ins)
-    ins_file.close()
-    del_file = open(os.path.join(ccdir, "html/elements/del/%s-novalid.html" % key), 'w')
-    del_file.write(template_del)
-    del_file.close()
-
-for key in warnings.keys():
-    non_error = warnings[key]
+    template_ins += f'<ins datetime="{value}"></ins>'
+    template_del += f'<del datetime="{errors[key]}"></del>'
+    with open(os.path.join(ccdir, f"html/elements/ins/{key}-novalid.html"), 'w') as ins_file:
+        ins_file.write(template_ins)
+    with open(os.path.join(ccdir, f"html/elements/del/{key}-novalid.html"), 'w') as del_file:
+        del_file.write(template_del)
+for key, value_ in warnings.items():
     template_ins = template
     template_del = template
     template_ins += '<title>%s</title>\n' % key
     template_del += '<title>%s</title>\n' % key
-    template_ins += '<ins datetime="%s"></ins>' % warnings[key]
-    template_del += '<del datetime="%s"></del>' % warnings[key]
-    ins_file = open(os.path.join(ccdir, "html/elements/ins/%s-haswarn.html" % key), 'w')
-    ins_file.write(template_ins)
-    ins_file.close()
-    del_file = open(os.path.join(ccdir, "html/elements/del/%s-haswarn.html" % key), 'w')
-    del_file.write(template_del)
-    del_file.close()
-
-ins_file = open(os.path.join(ccdir, "html/elements/ins/datetime-isvalid.html"), 'w')
-del_file = open(os.path.join(ccdir, "html/elements/del/datetime-isvalid.html"), 'w')
-ins_file.write(template + '<title>valid datetime</title>\n')
-del_file.write(template + '<title>valid datetime</title>\n')
-for key in non_errors.keys():
-    non_error = non_errors[key]
-    ins_file.write('<ins datetime="%s"></ins> <!-- %s -->\n' % (non_errors[key], key))
-    del_file.write('<del datetime="%s"></del> <!-- %s -->\n' % (non_errors[key], key))
-ins_file.close()
+    template_ins += f'<ins datetime="{value_}"></ins>'
+    template_del += f'<del datetime="{warnings[key]}"></del>'
+    with open(os.path.join(ccdir, f"html/elements/ins/{key}-haswarn.html"), 'w') as ins_file:
+        ins_file.write(template_ins)
+    with open(os.path.join(ccdir, f"html/elements/del/{key}-haswarn.html"), 'w') as del_file:
+        del_file.write(template_del)
+with open(os.path.join(ccdir, "html/elements/ins/datetime-isvalid.html"), 'w') as ins_file:
+    del_file = open(os.path.join(ccdir, "html/elements/del/datetime-isvalid.html"), 'w')
+    ins_file.write(template + '<title>valid datetime</title>\n')
+    del_file.write(template + '<title>valid datetime</title>\n')
+    for key, value__ in non_errors.items():
+        ins_file.write('<ins datetime="%s"></ins> <!-- %s -->\n' % (value__, key))
+        del_file.write('<del datetime="%s"></del> <!-- %s -->\n' % (non_errors[key], key))
 del_file.close()
 # vim: ts=4:sw=4

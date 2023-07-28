@@ -31,9 +31,9 @@ myprotocol = 'http'
 myhost = 'localhost'
 port = 8080
 doc_root = os.path.join(repo_root, "annotation-protocol", "files", "")
-container_path = doc_root + 'annotations/'
+container_path = f'{doc_root}annotations/'
 
-URIroot = myprotocol + '://' + myhost + ':{0}'.format(port)
+URIroot = f'{myprotocol}://{myhost}' + ':{0}'.format(port)
 
 per_page = 10
 
@@ -66,7 +66,7 @@ def dump_json(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
 
 def add_cors_headers(resp):
-    headers_file = doc_root + 'annotations/cors.headers'
+    headers_file = f'{doc_root}annotations/cors.headers'
     resp.headers.update(load_headers_from_file(headers_file))
 
 def load_headers_from_file(path):
@@ -78,19 +78,17 @@ def load_headers_from_file(path):
     return headers
 
 def annotation_files():
-    files = []
-    for file in os.listdir(container_path):
-        if file.endswith('.jsonld') or file.endswith('.json'):
-            files.append(file)
-    for item in list(tempAnnotations.keys()):
-        files.append(item)
+    files = [
+        file
+        for file in os.listdir(container_path)
+        if file.endswith('.jsonld') or file.endswith('.json')
+    ]
+    files.extend(iter(list(tempAnnotations.keys())))
     return files
 
 
 def annotation_iris(skip=0):
-    iris = []
-    for filename in annotation_files():
-        iris.append(URIroot + '/annotations/' + filename)
+    iris = [f'{URIroot}/annotations/{filename}' for filename in annotation_files()]
     return iris[skip:][:per_page]
 
 
@@ -121,15 +119,15 @@ def collection_get(request, response):
 
     # stub collection
     collection_json = {
-      "@context": [
-        "http://www.w3.org/ns/anno.jsonld",
-        "http://www.w3.org/ns/ldp.jsonld"
-      ],
-      "id": URIroot + "/annotations/",
-      "type": ["BasicContainer", "AnnotationCollection"],
-      "total": 0,
-      "label": "A Container for Web Annotations",
-      "first": URIroot + "/annotations/?page=0"
+        "@context": [
+            "http://www.w3.org/ns/anno.jsonld",
+            "http://www.w3.org/ns/ldp.jsonld",
+        ],
+        "id": f"{URIroot}/annotations/",
+        "type": ["BasicContainer", "AnnotationCollection"],
+        "total": 0,
+        "label": "A Container for Web Annotations",
+        "first": f"{URIroot}/annotations/?page=0",
     }
 
     last_page = (total_annotations() / per_page) - 1
@@ -137,20 +135,14 @@ def collection_get(request, response):
 
     # Default Container format SHOULD be PreferContainedDescriptions
     preference = extract_preference(request.headers.get('Prefer'))
-    if 'include' in preference:
-        preference = preference['include']
-    else:
-        preference = None
-
+    preference = preference['include'] if 'include' in preference else None
     collection_json['total'] = total_annotations()
     # TODO: calculate last page and add it's page number
 
-    if (qs.get('iris') and qs.get('iris')[0] is '1') \
-            or (preference and PREFER_CONTAINED_IRIS in preference):
-        return_iris = True
-    else:
-        return_iris = False
-
+    return_iris = bool(
+        (qs.get('iris') and qs.get('iris')[0] is '1')
+        or (preference and PREFER_CONTAINED_IRIS in preference)
+    )
     # only PreferContainedIRIs has unqiue content
     if return_iris:
         collection_json['id'] += '?iris=1'
@@ -158,12 +150,8 @@ def collection_get(request, response):
         collection_json['last'] += '&iris=1'
 
     if preference and PREFER_MINIMAL_CONTAINER not in preference:
-        if return_iris:
-            collection_json['first'] = annotation_iris()
-        else:
-            collection_json['first'] = annotations()
-
-    collection_headers_file = doc_root + 'annotations/collection.headers'
+        collection_json['first'] = annotation_iris() if return_iris else annotations()
+    collection_headers_file = f'{doc_root}annotations/collection.headers'
     add_cors_headers(response)
     response.headers.update(load_headers_from_file(collection_headers_file))
     # this one's unique per request
@@ -174,13 +162,9 @@ def collection_get(request, response):
 @wptserve.handlers.handler
 def collection_head(request, response):
     container_path = doc_root + request.request_path
-    if os.path.isdir(container_path):
-        response.status = 200
-    else:
-        response.status = 404
-
+    response.status = 200 if os.path.isdir(container_path) else 404
     add_cors_headers(response)
-    headers_file = doc_root + 'annotations/collection.headers'
+    headers_file = f'{doc_root}annotations/collection.headers'
     for header, value in load_headers_from_file(headers_file):
         response.headers.append(header, value)
 
@@ -190,32 +174,24 @@ def collection_head(request, response):
 @wptserve.handlers.handler
 def collection_options(request, response):
     container_path = doc_root + request.request_path
-    if os.path.isdir(container_path):
-        response.status = 200
-    else:
-        response.status = 404
-
+    response.status = 200 if os.path.isdir(container_path) else 404
     add_cors_headers(response)
-    headers_file = doc_root + 'annotations/collection.options.headers'
+    headers_file = f'{doc_root}annotations/collection.options.headers'
     for header, value in load_headers_from_file(headers_file):
         response.headers.append(header, value)
 
 def page(request, response):
     page_json = {
-      "@context": "http://www.w3.org/ns/anno.jsonld",
-      "id": URIroot + "/annotations/",
-      "type": "AnnotationPage",
-      "partOf": {
-        "id": URIroot + "/annotations/",
-        "total": 42023
-      },
-      "next": URIroot + "/annotations/",
-      "items": [
-      ]
+        "@context": "http://www.w3.org/ns/anno.jsonld",
+        "id": f"{URIroot}/annotations/",
+        "type": "AnnotationPage",
+        "partOf": {"id": f"{URIroot}/annotations/", "total": 42023},
+        "next": f"{URIroot}/annotations/",
+        "items": [],
     }
 
     add_cors_headers(response)
-    headers_file = doc_root + 'annotations/collection.headers'
+    headers_file = f'{doc_root}annotations/collection.headers'
     response.headers.update(load_headers_from_file(headers_file))
 
     qs = urlparse.parse_qs(request.url_parts.query)
@@ -255,7 +231,7 @@ def annotation_get(request, response):
     requested_file = doc_root + request.request_path[1:]
     base = os.path.basename( requested_file )
 
-    headers_file = doc_root + 'annotations/annotation.headers'
+    headers_file = f'{doc_root}annotations/annotation.headers'
 
     if base.startswith("temp-") and tempAnnotations[base]:
         response.headers.update(load_headers_from_file(headers_file))
@@ -293,7 +269,7 @@ def annotation_head(request, response):
     requested_file = doc_root + request.request_path[1:]
     base = os.path.basename(requested_file)
 
-    headers_file = doc_root + 'annotations/annotation.options.headers'
+    headers_file = f'{doc_root}annotations/annotation.options.headers'
 
     if base.startswith("temp-") and tempAnnotations[base]:
         response.status = 200
@@ -311,7 +287,7 @@ def annotation_options(request, response):
     requested_file = doc_root + request.request_path[1:]
     base = os.path.basename(requested_file)
 
-    headers_file = doc_root + 'annotations/annotation.options.headers'
+    headers_file = f'{doc_root}annotations/annotation.options.headers'
 
     if base.startswith("temp-") and tempAnnotations[base]:
         response.status = 200
@@ -327,10 +303,10 @@ def annotation_options(request, response):
 def create_annotation(body):
     # TODO: verify media type is JSON of some kind (at least)
     incoming = json.loads(body)
-    id = "temp-"+str(uuid.uuid4())
+    id = f"temp-{str(uuid.uuid4())}"
     if 'id' in incoming:
         incoming['canonical'] = incoming['id']
-    incoming['id'] = URIroot + '/annotations/' + id
+    incoming['id'] = f'{URIroot}/annotations/{id}'
 
     return incoming
 
@@ -341,12 +317,12 @@ def annotation_post(request, response):
     newID = incoming['id']
     key = os.path.basename(newID)
 
-    print("post:" + newID)
-    print("post:" + key)
+    print(f"post:{newID}")
+    print(f"post:{key}")
 
     tempAnnotations[key] = dump_json(incoming)
 
-    headers_file = doc_root + 'annotations/annotation.headers'
+    headers_file = f'{doc_root}annotations/annotation.headers'
     response.headers.update(load_headers_from_file(headers_file))
     response.headers.append('Location', newID)
     add_cors_headers(response)
@@ -362,12 +338,12 @@ def annotation_put(request, response):
     newID = incoming['id']
     key = os.path.basename(newID)
 
-    print("put:" + newID)
-    print("put:" + key)
+    print(f"put:{newID}")
+    print(f"put:{key}")
 
     tempAnnotations[key] = dump_json(incoming)
 
-    headers_file = doc_root + 'annotations/annotation.headers'
+    headers_file = f'{doc_root}annotations/annotation.headers'
     response.headers.update(load_headers_from_file(headers_file))
     response.headers.append('Location', incoming['id'])
     add_cors_headers(response)
@@ -382,7 +358,7 @@ def annotation_delete(request, response):
 
     add_cors_headers(response)
 
-    headers_file = doc_root + 'annotations/annotation.headers'
+    headers_file = f'{doc_root}annotations/annotation.headers'
 
     try:
         if base.startswith("temp-"):
@@ -398,9 +374,17 @@ def annotation_delete(request, response):
         response.content = 'Not Found'
 
 if __name__ == '__main__':
-    print('http://' + myhost + ':{0}/'.format(port))
-    print('container URI is http://' + myhost + ':{0}/'.format(port) + "/annotations/")
-    print('example annotation URI is http://' + myhost + ':{0}/'.format(port) + "/annotations/anno1.json")
+    print(f'http://{myhost}' + ':{0}/'.format(port))
+    print(
+        f'container URI is http://{myhost}'
+        + ':{0}/'.format(port)
+        + "/annotations/"
+    )
+    print(
+        f'example annotation URI is http://{myhost}'
+        + ':{0}/'.format(port)
+        + "/annotations/anno1.json"
+    )
 
     routes = [
         ("GET", "", wptserve.handlers.file_handler),

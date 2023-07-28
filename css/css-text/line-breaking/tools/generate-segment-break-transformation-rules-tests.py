@@ -72,7 +72,7 @@ def write_file(filename, content):
     with open(filename, 'wb') as f:
         f.write(content.encode('UTF-8'))
 
-print("# START tests from {}".format(__file__))
+print(f"# START tests from {__file__}")
 global idx
 idx = 0
 for i, (prevtype, prevchars) in enumerate(CHAR_SET):
@@ -103,5 +103,5 @@ for i, (prevtype, prevchars) in enumerate(CHAR_SET):
                                             prevchar=prevchars,
                                             nextchar=nextchars,
                                             expect='ONE'))
-        print("== {} {}".format(testfilename, reffilename))
-print("# END tests from {}".format(__file__))
+        print(f"== {testfilename} {reffilename}")
+print(f"# END tests from {__file__}")

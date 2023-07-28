@@ -7,8 +7,7 @@ def run_other(request, response, path):
     #This is a terrible hack
     environ = {u"__file__": path}
     exec(compile(open(path, u"r").read(), path, u'exec'), environ, environ)
-    rv = environ[u"main"](request, response)
-    return rv
+    return environ[u"main"](request, response)
 
 def main(request, response):
     origin = request.GET.first(b"origin", request.headers[b"origin"])
@@ -31,6 +30,13 @@ def main(request, response):
         elif handler == b"redirect":
             return run_other(request, response, os.path.join(request.doc_root, u"common", u"redirect.py"))
         else:
-            return run_other(request, response, os.path.join(os.path.dirname(isomorphic_decode(__file__)), isomorphic_decode(handler) + u".py"))
+            return run_other(
+                request,
+                response,
+                os.path.join(
+                    os.path.dirname(isomorphic_decode(__file__)),
+                    f"{isomorphic_decode(handler)}.py",
+                ),
+            )
     else:
         return

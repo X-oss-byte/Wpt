@@ -30,8 +30,7 @@ def main(request, response):
     if b'methods' in request.GET:
         response.headers.set(b"Access-Control-Allow-Methods", request.GET.first(b'methods'))
 
-    code_raw = request.GET.first(b'code', None)
-    if code_raw:
+    if code_raw := request.GET.first(b'code', None):
         code = int(code_raw)
     else:
         code = None
@@ -63,7 +62,4 @@ def main(request, response):
 
     body = json.dumps(headers)
 
-    if code:
-        return (code, b"StatusText"), [], body
-    else:
-        return body
+    return ((code, b"StatusText"), [], body) if code else body

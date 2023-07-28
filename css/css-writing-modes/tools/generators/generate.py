@@ -30,9 +30,9 @@ def generate_test_list() -> List[Tuple[str, str]]:
                 title = target[0];
                 html = target[1];
                 if middle is not None:
-                    title += " in " + middle[0];
+                    title += f" in {middle[0]}";
                     html = middle[1] + html + middle[2];
-                title = "Shrink-to-fit " + outer[0] + " with a child of orthogonal " + title;
+                title = f"Shrink-to-fit {outer[0]} with a child of orthogonal {title}";
                 html = outer[1] + html + outer[2];
                 test_list.append((title, html));
     return test_list
