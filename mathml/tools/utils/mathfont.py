@@ -5,7 +5,7 @@ em = 1000
 
 
 def create(aName, aCopyRight):
-    print("Generating %s.woff..." % aName, end="")
+    print(f"Generating {aName}.woff...", end="")
     mathFont = fontforge.font()
     mathFont.fontname = aName
     mathFont.familyname = aName
@@ -19,10 +19,10 @@ def create(aName, aCopyRight):
     g.width = em
     g.italicCorrection = 0
     g.topaccent = 0
-    g.mathKern.bottomLeft = tuple([(0, 0)])
-    g.mathKern.bottomRight = tuple([(0, 0)])
-    g.mathKern.topLeft = tuple([(0, 0)])
-    g.mathKern.topRight = tuple([(0, 0)])
+    g.mathKern.bottomLeft = ((0, 0), )
+    g.mathKern.bottomRight = ((0, 0), )
+    g.mathKern.topLeft = ((0, 0), )
+    g.mathKern.topRight = ((0, 0), )
     mathFont[ord(" ")].horizontalVariants = "space"
     mathFont[ord(" ")].verticalVariants = "space"
     return mathFont
@@ -178,10 +178,7 @@ def createGlyphFromValue(aFont, aCodePoint):
 
 
 def createSizeVariants(aFont, aUsePUA=False, aCenterOnBaseline=False):
-    if aUsePUA:
-        codePoint = PUA_startCodePoint
-    else:
-        codePoint = -1
+    codePoint = PUA_startCodePoint if aUsePUA else -1
     for size in (0, 1, 2, 3):
         g = aFont.createChar(codePoint, "v%d" % size)
         if aCenterOnBaseline:
@@ -224,7 +221,7 @@ def save(aFont):
     aFont.os2_typoascent_add = aFont.os2_typodescent_add = 0
     aFont.os2_winascent_add = aFont.os2_windescent_add = 0
     aFont.os2_use_typo_metrics = True
-    aFont.generate("../../fonts/math/%s.woff" % aFont.fontname)
+    aFont.generate(f"../../fonts/math/{aFont.fontname}.woff")
     if aFont.validate() == 0:
         print(" done.")
     else:

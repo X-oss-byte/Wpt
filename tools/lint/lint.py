@@ -56,10 +56,7 @@ def setup_logging(prefix: bool = False) -> None:
         if parent and len(parent.handlers) == 0:
             handler = logging.StreamHandler(sys.stdout)
             logger.addHandler(handler)
-    if prefix:
-        format = logging.BASIC_FORMAT
-    else:
-        format = "%(message)s"
+    format = logging.BASIC_FORMAT if prefix else "%(message)s"
     formatter = logging.Formatter(format)
     for handler in logger.handlers:
         handler.setFormatter(formatter)
@@ -139,7 +136,7 @@ def _all_files_equal(paths: Iterable[Text]) -> bool:
 
 
 def check_path_length(repo_root: Text, path: Text) -> List[rules.Error]:
-    if len(path) + 1 > 150:
+    if len(path) > 149:
         return [rules.PathLength.error(path, (path, len(path) + 1))]
     return []
 
@@ -154,10 +151,14 @@ def check_worker_collision(repo_root: Text, path: Text) -> List[rules.Error]:
     endings = [(".any.html", ".any.js"),
                (".any.worker.html", ".any.js"),
                (".worker.html", ".worker.js")]
-    for path_ending, generated in endings:
-        if path.endswith(path_ending):
-            return [rules.WorkerCollision.error(path, (path_ending, generated))]
-    return []
+    return next(
+        (
+            [rules.WorkerCollision.error(path, (path_ending, generated))]
+            for path_ending, generated in endings
+            if path.endswith(path_ending)
+        ),
+        [],
+    )
 
 
 def check_gitignore_file(repo_root: Text, path: Text) -> List[rules.Error]:
@@ -179,9 +180,7 @@ def check_gitignore_file(repo_root: Text, path: Text) -> List[rules.Error]:
 
 
 def check_mojom_js(repo_root: Text, path: Text) -> List[rules.Error]:
-    if path.endswith(".mojom.js"):
-        return [rules.MojomJSFile.error(path)]
-    return []
+    return [rules.MojomJSFile.error(path)] if path.endswith(".mojom.js") else []
 
 
 def check_ahem_copy(repo_root: Text, path: Text) -> List[rules.Error]:
@@ -193,10 +192,14 @@ def check_ahem_copy(repo_root: Text, path: Text) -> List[rules.Error]:
 
 def check_tentative_directories(repo_root: Text, path: Text) -> List[rules.Error]:
     path_parts = path.split(os.path.sep)
-    for directory in path_parts[:-1]:
-        if "tentative" in directory and directory != "tentative":
-            return [rules.TentativeDirectoryName.error(path)]
-    return []
+    return next(
+        (
+            [rules.TentativeDirectoryName.error(path)]
+            for directory in path_parts[:-1]
+            if "tentative" in directory and directory != "tentative"
+        ),
+        [],
+    )
 
 
 def check_git_ignore(repo_root: Text, paths: List[Text]) -> List[rules.Error]:
@@ -214,7 +217,7 @@ def check_git_ignore(repo_root: Text, paths: List[Text]) -> List[rules.Error]:
                 _, _, filter_string = match_filter.split(b':')
                 # If the matching filter reported by check-ignore is a special-case exception,
                 # that's fine. Otherwise, it requires a new special-case exception.
-                if filter_string[0:1] != b'!':
+                if filter_string[:1] != b'!':
                     path = path_bytes.decode("utf8")
                     errors.append(rules.IgnoredPath.error(path, (path,)))
         except subprocess.CalledProcessError:
@@ -257,8 +260,10 @@ def check_unique_testharness_basenames(repo_root: Text, paths: List[Text]) -> Li
         if len(v) == 1:
             continue
         context = (', '.join(v),)
-        for extension in v:
-            errors.append(rules.DuplicateBasenamePath.error(k + extension, context))
+        errors.extend(
+            rules.DuplicateBasenamePath.error(k + extension, context)
+            for extension in v
+        )
     return errors
 
 
@@ -319,7 +324,7 @@ def filter_ignorelist_errors(data: Ignorelist, errors: Sequence[rules.Error]) ->
     if not errors:
         return []
 
-    skipped = [False for item in range(len(errors))]
+    skipped = [False for _ in range(len(errors))]
 
     for i, (error_type, msg, path, line) in enumerate(errors):
         normpath = os.path.normcase(path)
@@ -360,10 +365,11 @@ def check_regexp_line(repo_root: Text, path: Text, f: IO[bytes]) -> List[rules.E
     applicable_regexps = [regexp for regexp in regexps if regexp.applies(path)]
 
     for i, line in enumerate(f):
-        for regexp in applicable_regexps:
-            if regexp.search(line):
-                errors.append((regexp.name, regexp.description, path, i+1))
-
+        errors.extend(
+            (regexp.name, regexp.description, path, i + 1)
+            for regexp in applicable_regexps
+            if regexp.search(line)
+        )
     return errors
 
 
@@ -512,8 +518,7 @@ def check_parsed(repo_root: Text, path: Text, f: IO[bytes]) -> List[rules.Error]
         src = element.attrib["src"]
 
         def incorrect_path(script: Text, src: Text) -> bool:
-            return (script == src or
-                ("/%s" % script in src and src != "/resources/%s" % script))
+            return script == src or f"/{script}" in src and src != f"/resources/{script}"
 
         if incorrect_path("testharness.js", src):
             errors.append(rules.TestharnessPath.error(path))
@@ -574,8 +579,10 @@ def check_python_ast(repo_root: Text, path: Text, f: IO[bytes]) -> List[rules.Er
 
     errors = []
     for checker in ast_checkers:
-        for lineno in checker.check(root):
-            errors.append(checker.rule.error(path, line_no=lineno))
+        errors.extend(
+            checker.rule.error(path, line_no=lineno)
+            for lineno in checker.check(root)
+        )
     return errors
 
 
@@ -607,12 +614,13 @@ def check_script_metadata(repo_root: Text, path: Text, f: IO[bytes]) -> List[rul
     for idx, line in enumerate(f):
         assert isinstance(line, bytes), line
 
-        m = meta_re.match(line)
-        if m:
+        if m := meta_re.match(line):
             key, value = m.groups()
             if key == b"global":
-                for rule_class, context in check_global_metadata(value):
-                    errors.append(rule_class.error(path, context, idx + 1))
+                errors.extend(
+                    rule_class.error(path, context, idx + 1)
+                    for rule_class, context in check_global_metadata(value)
+                )
             elif key == b"timeout":
                 if value != b"long":
                     errors.append(rules.UnknownTimeoutMetadata.error(path,
@@ -709,7 +717,7 @@ def output_errors_text(log: Callable[[Any], None], errors: List[rules.Error]) ->
     for error_type, description, path, line_number in errors:
         pos_string = path
         if line_number:
-            pos_string += ":%s" % line_number
+            pos_string += f":{line_number}"
         log(f"{pos_string}: {description} ({error_type})")
 
 
@@ -725,7 +733,7 @@ def output_errors_markdown(log: Callable[[Any], None], errors: List[rules.Error]
     for error_type, description, path, line_number in errors:
         pos_string = path
         if line_number:
-            pos_string += ":%s" % line_number
+            pos_string += f":{line_number}"
         log(f"{error_type} | {pos_string} | {description} |")
 
 
@@ -790,7 +798,7 @@ def lint_paths(kwargs: Dict[Text, Any], wpt_root: Text) -> List[Text]:
     elif kwargs["paths_file"]:
         paths = []
         with open(kwargs["paths_file"], 'r', newline='') as f:
-            for line in f.readlines():
+            for line in f:
                 path = line.strip()
                 if os.path.isdir(path):
                     path_dir = list(all_filesystem_paths(wpt_root, path))
@@ -911,7 +919,7 @@ def lint(repo_root: Text,
         output_errors(logger.error, errors)
 
         if github_checks_outputter:
-            first_output = len(error_count) == 0
+            first_output = not error_count
             output_errors_github_checks(github_checks_outputter, errors, first_output)
 
         for error_type, error, path, line in errors:

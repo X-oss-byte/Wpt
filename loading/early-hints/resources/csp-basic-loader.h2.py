@@ -2,10 +2,8 @@ import os
 
 
 def _calculate_csp_value(policy, resource_origin):
-    if policy == "absent":
-        return None
-    elif policy == "allowed":
-        return "script-src 'self' 'unsafe-inline' {}".format(resource_origin)
+    if policy == "allowed":
+        return f"script-src 'self' 'unsafe-inline' {resource_origin}"
     elif policy == "disallowed":
         return "script-src 'self' 'unsafe-inline'"
     else:
@@ -17,14 +15,14 @@ def handle_headers(frame, request, response):
 
     # Send a 103 response.
     resource_url = request.GET.first(b"resource-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(resource_url)
+    link_header_value = f"<{resource_url}>; rel=preload; as=script"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),
     ]
-    early_hints_csp = _calculate_csp_value(
-        request.GET.first(b"early-hints-policy").decode(), resource_origin)
-    if early_hints_csp:
+    if early_hints_csp := _calculate_csp_value(
+        request.GET.first(b"early-hints-policy").decode(), resource_origin
+    ):
         early_hints.append((b"content-security-policy", early_hints_csp))
     response.writer.write_raw_header_frame(headers=early_hints,
                                            end_headers=True)
@@ -32,9 +30,9 @@ def handle_headers(frame, request, response):
     # Send the final response header.
     response.status = 200
     response.headers["content-type"] = "text/html"
-    final_csp = _calculate_csp_value(
-        request.GET.first(b"final-policy").decode(), resource_origin)
-    if final_csp:
+    if final_csp := _calculate_csp_value(
+        request.GET.first(b"final-policy").decode(), resource_origin
+    ):
         response.headers["content-security-policy"] = final_csp
     response.write_status_headers()
 

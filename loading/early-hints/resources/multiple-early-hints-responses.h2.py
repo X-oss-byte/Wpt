@@ -5,7 +5,7 @@ def handle_headers(frame, request, response):
     # Send two Early Hints responses.
 
     first_preload = request.GET.first(b"first-preload").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(first_preload)
+    link_header_value = f"<{first_preload}>; rel=preload; as=script"
     early_hints = [
         (b":status", b"103"),
         (b"content-security-policy", "script-src 'self' 'unsafe-inline'"),
@@ -15,9 +15,9 @@ def handle_headers(frame, request, response):
                                            end_headers=True)
 
     second_preload = request.GET.first(b"second-preload").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(second_preload)
+    link_header_value = f"<{second_preload}>; rel=preload; as=script"
     second_preload_origin = request.GET.first(b"second-preload-origin").decode()
-    csp_value = "script-src 'self' 'unsafe-inline' {}".format(second_preload_origin)
+    csp_value = f"script-src 'self' 'unsafe-inline' {second_preload_origin}"
     early_hints = [
         (b":status", b"103"),
         (b"content-security-policy", csp_value),

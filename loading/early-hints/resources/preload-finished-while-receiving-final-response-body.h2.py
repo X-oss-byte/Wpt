@@ -6,7 +6,7 @@ utils = importlib.import_module("loading.early-hints.resources.utils")
 
 def handle_headers(frame, request, response):
     resource_url = request.GET.first(b"resource-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(resource_url)
+    link_header_value = f"<{resource_url}>; rel=preload; as=script"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),

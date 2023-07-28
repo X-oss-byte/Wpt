@@ -7,7 +7,7 @@ def main(request, response):
         # Expire the named cookie, and return a JSON-encoded success code.
         name = readParameter(request, paramName=u"name", requireValue=True)
         scheme = request.url_parts.scheme
-        headers.append(makeDropCookie(name, u"https" == scheme))
+        headers.append(makeDropCookie(name, scheme == u"https"))
         return headers, b'{"success": true}'
     except:
         return 500, headers, b'{"error" : "Empty or missing name parameter."}'

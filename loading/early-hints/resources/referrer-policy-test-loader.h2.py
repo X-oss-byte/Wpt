@@ -3,21 +3,18 @@ import time
 
 
 def handle_headers(frame, request, response):
-    headers = []
     referrer_policy = request.GET.first(b"referrer-policy")
-    headers.append((b"referrer-policy", referrer_policy))
-
+    headers = [(b"referrer-policy", referrer_policy)]
     preload_url = request.GET.first(b"same-origin-preload-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(preload_url)
+    link_header_value = f"<{preload_url}>; rel=preload; as=script"
     headers.append((b"link", link_header_value))
     preload_url = request.GET.first(b"cross-origin-preload-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(preload_url)
+    link_header_value = f"<{preload_url}>; rel=preload; as=script"
     headers.append((b"link", link_header_value))
 
     # Send a 103 response.
     early_hints = [(b":status", b"103")]
-    for header in headers:
-        early_hints.append(header)
+    early_hints.extend(iter(headers))
     response.writer.write_raw_header_frame(headers=early_hints,
                                            end_headers=True)
 

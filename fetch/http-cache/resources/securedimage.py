@@ -12,7 +12,10 @@ def main(request, response):
     else:
         auth = request.headers.get(b"Authorization")
         if auth != b"Basic dGVzdHVzZXI6dGVzdHBhc3M=":
-            response.set_error(403, u"Invalid username or password - " + isomorphic_decode(auth))
+            response.set_error(
+                403,
+                f"Invalid username or password - {isomorphic_decode(auth)}",
+            )
             return
 
     response.status = 301

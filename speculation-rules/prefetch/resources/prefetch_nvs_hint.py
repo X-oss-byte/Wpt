@@ -18,17 +18,4 @@ def main(request, response):
       time.sleep(0.1)
       nvswait = request.server.stash.take(uuid)
 
-  content = (f'<!DOCTYPE html>\n'
-             f'<script src="/common/dispatcher/dispatcher.js"></script>\n'
-             f'<script src="utils.sub.js"></script>\n'
-             f'<script>\n'
-             f'  window.requestHeaders = {{\n'
-             f'    purpose: "{request.headers.get("Purpose", b"").decode("utf-8")}",\n'
-             f'    sec_purpose: "{request.headers.get("Sec-Purpose", b"").decode("utf-8")}",\n'
-             f'    referer: "{request.headers.get("Referer", b"").decode("utf-8")}",\n'
-             f'  }};\n'
-             f'  const uuid = new URLSearchParams(location.search).get("uuid");\n'
-             f'  window.executor = new Executor(uuid);\n'
-             f'</script>\n')
-
-  return content
+  return f'<!DOCTYPE html>\n<script src="/common/dispatcher/dispatcher.js"></script>\n<script src="utils.sub.js"></script>\n<script>\n  window.requestHeaders = {{\n    purpose: "{request.headers.get("Purpose", b"").decode("utf-8")}",\n    sec_purpose: "{request.headers.get("Sec-Purpose", b"").decode("utf-8")}",\n    referer: "{request.headers.get("Referer", b"").decode("utf-8")}",\n  }};\n  const uuid = new URLSearchParams(location.search).get("uuid");\n  window.executor = new Executor(uuid);\n</script>\n'

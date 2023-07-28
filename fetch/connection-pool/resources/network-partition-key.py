@@ -30,7 +30,9 @@ def main(request, response):
         with stash.lock:
             # Don't use server hostname here, since H2 allows multiple hosts to reuse a connection.
             # Server IP is not currently available, unfortunately.
-            address_key = isomorphic_encode(str(request.client_address) + u"|" + str(request.url_parts.port))
+            address_key = isomorphic_encode(
+                f"{str(request.client_address)}|{str(request.url_parts.port)}"
+            )
             server_state = stash.take(uuid) or {b"test_failed": False,
               b"request_count": 0, b"connection_count": 0}
             request_count = server_state[b"request_count"]
@@ -47,8 +49,7 @@ def main(request, response):
             test_failed = server_state[b"test_failed"]
             stash.put(uuid, server_state)
 
-    origin = request.headers.get(b"Origin")
-    if origin:
+    if origin := request.headers.get(b"Origin"):
         response.headers.set(b"Access-Control-Allow-Origin", origin)
         response.headers.set(b"Access-Control-Allow-Credentials", b"true")
 
@@ -64,8 +65,9 @@ def main(request, response):
             return simple_response(request, response, status, b"OK", b"Multiple partition IDs used on a socket")
         body = b"ok"
         if request.GET.first(b"addcounter", False):
-            body += (". Request was sent " + str(request_count) + " times. " +
-             str(connection_count) + " connections were created.").encode('utf-8')
+            body += f". Request was sent {request_count} times. {connection_count} connections were created.".encode(
+                'utf-8'
+            )
         return simple_response(request, response, status, b"OK", body)
 
     if dispatch == b"clean_up":
@@ -109,22 +111,19 @@ def handle_fetch_file(request, response, partition_id, uuid):
     if sandbox == b"true":
         response.headers.set(b"Content-Security-Policy", b"sandbox allow-scripts")
 
-    file = open(path, mode="rb")
-    body = file.read()
-    file.close()
-
+    with open(path, mode="rb") as file:
+        body = file.read()
     subresource_path = b"/" + isomorphic_encode(os.path.relpath(isomorphic_decode(__file__), base_path)).replace(b'\\', b'/')
     subresource_params = b"?partition_id=" + partition_id + b"&uuid=" + uuid + b"&subresource_origin=" + subresource_origin + b"&include_credentials=" + include_credentials
     body = body.replace(b"SUBRESOURCE_PREFIX:", subresource_origin + subresource_path + subresource_params)
 
-    other_origin = request.GET.first(b"other_origin", None)
-    if other_origin:
+    if other_origin := request.GET.first(b"other_origin", None):
         body = body.replace(b"OTHER_PREFIX:", other_origin + subresource_path + subresource_params)
 
     mimetypes.init()
     mimetype_pair = mimetypes.guess_type(path)
     mimetype = mimetype_pair[0]
 
-    if mimetype == None or mimetype_pair[1] != None:
+    if mimetype is None or mimetype_pair[1] != None:
         return simple_response(request, response, 500, b"Server Error", b"Unknown MIME type")
     return simple_response(request, response, 200, b"OK", body, mimetype)

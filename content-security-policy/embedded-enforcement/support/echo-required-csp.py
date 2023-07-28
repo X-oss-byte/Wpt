@@ -3,11 +3,10 @@ import json
 from wptserve.utils import isomorphic_decode
 
 def main(request, response):
-    message = {}
-
     header = request.headers.get(b"Test-Header-Injection");
-    message[u'test_header_injection'] = isomorphic_decode(header) if header else None
-
+    message = {
+        'test_header_injection': isomorphic_decode(header) if header else None
+    }
     header = request.headers.get(b"Sec-Required-CSP");
     message[u'required_csp'] = isomorphic_decode(header) if header else None
 

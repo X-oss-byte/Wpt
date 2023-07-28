@@ -15,7 +15,7 @@ class Image:
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.img = bytearray([0 for i in range(3 * width * height)])
+        self.img = bytearray([0 for _ in range(3 * width * height)])
 
     @staticmethod
     def new(mode, size, color=0):
@@ -53,7 +53,7 @@ class Image:
 
         padlength = (4 - (self.width * 3) % 4) % 4
         bmppad = bytearray([0, 0, 0])
-        padding = bmppad[0 : padlength]
+        padding = bmppad[:padlength]
 
         f.write(bmpfileheader)
         f.write(bmpinfoheader)
@@ -73,10 +73,7 @@ def encode_string_as_bmp_image(string_data):
     color_data = []
     for byte in data_bytes:
         p = [int(x) * 255 for x in '{0:08b}'.format(byte)]
-        color_data.append((p[0], p[1], p[2]))
-        color_data.append((p[3], p[4], p[5]))
-        color_data.append((p[6], p[7], 0))
-
+        color_data.extend(((p[0], p[1], p[2]), (p[3], p[4], p[5]), (p[6], p[7], 0)))
     # Render image.
     num_pixels = len(color_data)
     sqrt = int(math.ceil(math.sqrt(num_pixels)))
@@ -98,8 +95,7 @@ def generate_payload(request, server_data):
     return data
 
 def generate_report_headers_payload(request, server_data):
-    stashed_data = request.server.stash.take(request.GET[b"id"])
-    return stashed_data
+    return request.server.stash.take(request.GET[b"id"])
 
 def main(request, response):
     handler = lambda data: generate_payload(request, data)

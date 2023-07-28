@@ -71,10 +71,7 @@ def _get_response_headers(method, mode):
   if mode == b"cors+pna":
     return [acam, _ACAO, _ACAPN]
 
-  if mode == b"cors+pna+sw":
-    return [acam, _ACAO, _ACAPN, _ACAH]
-
-  return []
+  return [acam, _ACAO, _ACAPN, _ACAH] if mode == b"cors+pna+sw" else []
 
 def _get_expect_single_preflight(request):
   return request.GET.get(b"expect-single-preflight")
@@ -127,7 +124,7 @@ def _final_response_body(request):
   prefix = b""
   if request.GET.get(b"random-js-prefix"):
     value = random.randint(0, 1000000000)
-    prefix = isomorphic_encode("// Random value: {}\n\n".format(value))
+    prefix = isomorphic_encode(f"// Random value: {value}\n\n")
 
   path = os.path.join(os.path.dirname(isomorphic_encode(__file__)), file_name)
   with open(path, 'rb') as f:
@@ -172,4 +169,4 @@ def main(request, response):
       return _handle_final_request(request, response)
   except BaseException as e:
     # Surface exceptions to the client, where they show up as assertion errors.
-    return (500, [("X-exception", str(e))], "exception: {}".format(e))
+    return 500, [("X-exception", str(e))], f"exception: {e}"

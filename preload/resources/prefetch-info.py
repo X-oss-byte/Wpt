@@ -21,9 +21,10 @@ def main(request, response):
             stash.put(key, json_reqs)
             return
         else:
-            headers = {}
-            for header, value in request.headers.items():
-                headers[header.decode("utf8")] = value[0].decode("utf8")
+            headers = {
+                header.decode("utf8"): value[0].decode("utf8")
+                for header, value in request.headers.items()
+            }
             path = request.url
             requests.append({"headers": headers, "url": request.url})
             stash.put(key, dumps(requests))

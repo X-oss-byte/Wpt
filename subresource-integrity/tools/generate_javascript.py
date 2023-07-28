@@ -23,26 +23,26 @@ def format_digest(digest):
 Generate an encoded sha512 URI.
 '''
 def sha512_uri(content):
-  return "sha512-%s" % format_digest(sha512(content).digest())
+  return f"sha512-{format_digest(sha512(content).digest())}"
 
 '''
 Generate an encoded sha256 URI.
 '''
 def sha256_uri(content):
-  return "sha256-%s" % format_digest(sha256(content).digest())
+  return f"sha256-{format_digest(sha256(content).digest())}"
 
 '''
 Generate an encoded md5 digest URI.
 '''
 def md5_uri(content):
-  return "md5-%s" % format_digest(md5(content).digest())
+  return f"md5-{format_digest(md5(content).digest())}"
 
 def main():
   for file in js_files():
-    print("Generating content for %s" % file)
+    print(f"Generating content for {file}")
     base = path.splitext(path.basename(file))[0]
     var_name = re.sub(r"[^a-z0-9]", "_", base)
-    content = "%s=true;" % var_name
+    content = f"{var_name}=true;"
     with open(file, "w") as f: f.write(content)
     print("\tSHA512 integrity: %s" % sha512_uri(content))
     print("\tSHA256 integrity: %s" % sha256_uri(content))

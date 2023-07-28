@@ -77,7 +77,7 @@ def run(*args, **kwargs):
         taskgroups.add(taskgroup_id)
 
     if not taskgroups:
-        logger.error("No complete Taskcluster runs found for ref %s" % kwargs["ref"])
+        logger.error(f'No complete Taskcluster runs found for ref {kwargs["ref"]}')
         return 1
 
     for taskgroup in taskgroups:
@@ -86,18 +86,16 @@ def run(*args, **kwargs):
             taskgroup_url = "https://queue.taskcluster.net/v1/task-group/%s/list"
             artifacts_list_url = "https://queue.taskcluster.net/v1/task/%s/artifacts"
         else:
-            taskgroup_url = TASKCLUSTER_ROOT_URL + "/api/queue/v1/task-group/%s/list"
-            artifacts_list_url = TASKCLUSTER_ROOT_URL + "/api/queue/v1/task/%s/artifacts"
+            taskgroup_url = f"{TASKCLUSTER_ROOT_URL}/api/queue/v1/task-group/%s/list"
+            artifacts_list_url = f"{TASKCLUSTER_ROOT_URL}/api/queue/v1/task/%s/artifacts"
         tasks = get_json(taskgroup_url % taskgroup, "tasks")
         for task in tasks:
             task_id = task["status"]["taskId"]
             url = artifacts_list_url % (task_id,)
             for artifact in get_json(url, "artifacts"):
                 if artifact["name"].endswith(kwargs["artifact_name"]):
-                    filename = "%s-%s-%s" % (task["task"]["metadata"]["name"],
-                                             task_id,
-                                             kwargs["artifact_name"])
-                    path = get("%s/%s" % (url, artifact["name"]), kwargs["out_dir"], filename)
+                    filename = f'{task["task"]["metadata"]["name"]}-{task_id}-{kwargs["artifact_name"]}'
+                    path = get(f'{url}/{artifact["name"]}', kwargs["out_dir"], filename)
                     logger.info(path)
 
 

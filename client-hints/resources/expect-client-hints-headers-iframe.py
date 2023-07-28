@@ -15,14 +15,14 @@ def main(request, response):
         should = (request.GET[value.lower()] == b"true")
         present = request.headers.get(value.lower()) or request.headers.get(value)
         if present:
-            log += isomorphic_decode(value) + u" " + str(should) + u" " + isomorphic_decode(present) + u", "
+            log += f"{isomorphic_decode(value)} {str(should)} {isomorphic_decode(present)}, "
         else:
-            log += isomorphic_decode(value) + u" " + str(should) + u" " + str(present) + u", "
+            log += f"{isomorphic_decode(value)} {str(should)} {str(present)}, "
         if (should and not present) or (not should and present):
             if present:
-                result = u"FAIL " + isomorphic_decode(value) + u" " + str(should) + u" " + isomorphic_decode(present)
+                result = f"FAIL {isomorphic_decode(value)} {str(should)} {isomorphic_decode(present)}"
             else:
-                result = u"FAIL " + isomorphic_decode(value) + u" " + str(should) + u" " + str(present)
+                result = f"FAIL {isomorphic_decode(value)} {str(should)} {str(present)}"
             break
 
     response.headers.append(b"Access-Control-Allow-Origin", b"*")

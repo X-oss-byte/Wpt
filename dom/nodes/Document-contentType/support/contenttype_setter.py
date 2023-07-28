@@ -4,16 +4,14 @@ def main(request, response):
     if type and subtype:
         response.headers[b"Content-Type"] = type + b"/" + subtype
 
-    removeContentType = request.GET.first(b"removeContentType", None)
-    if removeContentType:
+    if removeContentType := request.GET.first(b"removeContentType", None):
         try:
             del response.headers[b"Content-Type"]
         except KeyError:
             pass
 
     content = b'<head>'
-    mimeHead = request.GET.first(b"mime", None);
-    if mimeHead:
+    if mimeHead := request.GET.first(b"mime", None):
         content += b'<meta http-equiv="Content-Type" content="%s; charset=utf-8"/>' % mimeHead
     content += b"</head>"
 

@@ -3,12 +3,12 @@ import os
 
 def handle_headers(frame, request, response):
     resource_url = request.GET.first(b"resource-url").decode()
-    as_value = request.GET.first(b"as", None)
-    if as_value:
-        link_header_value = "<{}>; rel=modulepreload; as={}".format(
-            resource_url, as_value.decode())
+    if as_value := request.GET.first(b"as", None):
+        link_header_value = (
+            f"<{resource_url}>; rel=modulepreload; as={as_value.decode()}"
+        )
     else:
-        link_header_value = "<{}>; rel=modulepreload".format(resource_url)
+        link_header_value = f"<{resource_url}>; rel=modulepreload"
     early_hints = [
         (b":status", b"103"),
         (b"link", link_header_value),

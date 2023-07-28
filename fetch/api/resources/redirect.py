@@ -11,16 +11,22 @@ def main(request, response):
                (b"Cache-Control", b"no-cache"),
                (b"Pragma", b"no-cache")]
     if b"Origin" in request.headers:
-        headers.append((b"Access-Control-Allow-Origin", request.headers.get(b"Origin", b"")))
-        headers.append((b"Access-Control-Allow-Credentials", b"true"))
+        headers.extend(
+            (
+                (
+                    b"Access-Control-Allow-Origin",
+                    request.headers.get(b"Origin", b""),
+                ),
+                (b"Access-Control-Allow-Credentials", b"true"),
+            )
+        )
     else:
         headers.append((b"Access-Control-Allow-Origin", b"*"))
 
     token = None
     if b"token" in request.GET:
         token = request.GET.first(b"token")
-        data = request.server.stash.take(token)
-        if data:
+        if data := request.server.stash.take(token):
             stashed_data = data
 
     if request.method == u"OPTIONS":
@@ -28,7 +34,7 @@ def main(request, response):
             headers.append((b"Access-Control-Allow-Headers", request.GET[b'allow_headers']))
         stashed_data[b'preflight'] = b"1"
         #Preflight is not redirected: return 200
-        if not b"redirect_preflight" in request.GET:
+        if b"redirect_preflight" not in request.GET:
             if token:
                 request.server.stash.put(request.GET.first(b"token"), stashed_data)
             return 200, headers, u""
@@ -44,15 +50,15 @@ def main(request, response):
         url = isomorphic_decode(request.GET[b'location'])
         if b"simple" not in request.GET:
             scheme = urlparse(url).scheme
-            if scheme == u"" or scheme == u"http" or scheme == u"https":
+            if scheme in [u"", u"http", u"https"]:
                 url += u"&" if u'?' in url else u"?"
-                #keep url parameters in location
-                url_parameters = {}
-                for item in request.GET.items():
-                    url_parameters[isomorphic_decode(item[0])] = isomorphic_decode(item[1][0])
+                url_parameters = {
+                    isomorphic_decode(item[0]): isomorphic_decode(item[1][0])
+                    for item in request.GET.items()
+                }
                 url += urlencode(url_parameters)
                 #make sure location changes during redirection loop
-                url += u"&count=" + str(stashed_data[b'count'])
+                url += f"&count={str(stashed_data[b'count'])}"
         headers.append((b"Location", isomorphic_encode(url)))
 
     if b"redirect_referrerpolicy" in request.GET:

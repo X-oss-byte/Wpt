@@ -28,10 +28,7 @@ class Status:
 
 def run(cmd, return_stdout=False, **kwargs):
     logger.info(" ".join(cmd))
-    if return_stdout:
-        f = subprocess.check_output
-    else:
-        f = subprocess.check_call
+    f = subprocess.check_output if return_stdout else subprocess.check_call
     return f(cmd, **kwargs)
 
 
@@ -49,18 +46,18 @@ def compress_manifest(path):
 def request(url, desc, method=None, data=None, json_data=None, params=None, headers=None):
     github_token = os.environ.get("GITHUB_TOKEN")
     default_headers = {
-        "Authorization": "token %s" % github_token,
-        "Accept": "application/vnd.github.machine-man-preview+json"
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.machine-man-preview+json",
     }
 
     _headers = default_headers
     if headers is not None:
-        _headers.update(headers)
+        _headers |= headers
 
     kwargs = {"params": params,
               "headers": _headers}
     try:
-        logger.info("Requesting URL %s" % url)
+        logger.info(f"Requesting URL {url}")
         if json_data is not None or data is not None:
             if method is None:
                 method = requests.post
@@ -78,30 +75,31 @@ def request(url, desc, method=None, data=None, json_data=None, params=None, head
     try:
         resp.raise_for_status()
     except requests.HTTPError:
-        logger.error("%s failed: Got HTTP status %s. Response:" %
-                     (desc, resp.status_code))
+        logger.error(f"{desc} failed: Got HTTP status {resp.status_code}. Response:")
         logger.error(resp.text)
         return None
 
     try:
         return resp.json()
     except ValueError:
-        logger.error("%s failed: Returned data was not JSON Response:" % desc)
+        logger.error(f"{desc} failed: Returned data was not JSON Response:")
         logger.error(resp.text)
 
 
 def get_pr(owner, repo, sha):
-    data = request("https://api.github.com/search/issues?q=type:pr+is:merged+repo:%s/%s+sha:%s" %
-                   (owner, repo, sha), "Getting PR")
+    data = request(
+        f"https://api.github.com/search/issues?q=type:pr+is:merged+repo:{owner}/{repo}+sha:{sha}",
+        "Getting PR",
+    )
     if data is None:
         return None
 
     items = data["items"]
     if len(items) == 0:
-        logger.error("No PR found for %s" % sha)
+        logger.error(f"No PR found for {sha}")
         return None
     if len(items) > 1:
-        logger.warning("Found multiple PRs for %s" % sha)
+        logger.warning(f"Found multiple PRs for {sha}")
 
     pr = items[0]
 
@@ -126,13 +124,12 @@ def create_release(manifest_path, owner, repo, sha, tag, body):
     upload_exts = [".gz", ".bz2", ".zst"]
     for upload_ext in upload_exts:
         upload_filename = f"MANIFEST-{sha}.json{upload_ext}"
-        params = {"name": upload_filename,
-                  "label": "MANIFEST.json%s" % upload_ext}
+        params = {"name": upload_filename, "label": f"MANIFEST.json{upload_ext}"}
 
         with open(f"{manifest_path}{upload_ext}", "rb") as f:
             upload_data = f.read()
 
-        logger.info("Uploading %s bytes" % len(upload_data))
+        logger.info(f"Uploading {len(upload_data)} bytes")
 
         upload_resp = request(upload_url, "Manifest upload", data=upload_data, params=params,
                               headers={'Content-Type': 'application/octet-stream'})
@@ -147,7 +144,7 @@ def create_release(manifest_path, owner, repo, sha, tag, body):
     if not edit_resp:
         return False
 
-    logger.info("Released %s" % edit_resp["html_url"])
+    logger.info(f'Released {edit_resp["html_url"]}')
     return True
 
 
@@ -160,7 +157,7 @@ def should_dry_run():
         logger.info("Dry run for PR")
         return True
     if event.get("ref") != "refs/heads/master":
-        logger.info("Dry run for ref %s" % event.get("ref"))
+        logger.info(f'Dry run for ref {event.get("ref")}')
         return True
     return False
 
@@ -186,7 +183,7 @@ def main():
     pr = get_pr(owner, repo, head_rev)
     if pr is None:
         return Status.FAIL
-    tag_name = "merge_pr_%s" % pr
+    tag_name = f"merge_pr_{pr}"
 
     if not create_release(manifest_path, owner, repo, head_rev, tag_name, body):
         return Status.FAIL

@@ -8,28 +8,24 @@ import time
 
 
 def _remove_relative_resources_prefix(path):
-    if path.startswith("resources/"):
-        return path[len("resources/"):]
-    return path
+    return path[len("resources/"):] if path.startswith("resources/") else path
 
 
 def handle_headers(frame, request, response):
     preload_headers = []
     for encoded_preload in request.GET.get_list(b"preloads"):
         preload = json.loads(encoded_preload.decode("utf-8"))
-        header = "<{}>; rel=preload; as={}".format(preload["url"], preload["as_attr"])
+        header = f'<{preload["url"]}>; rel=preload; as={preload["as_attr"]}'
         if "crossorigin_attr" in preload:
-            crossorigin = preload["crossorigin_attr"]
-            if crossorigin:
-                header += "; crossorigin={}".format(crossorigin)
+            if crossorigin := preload["crossorigin_attr"]:
+                header += f"; crossorigin={crossorigin}"
             else:
                 header += "; crossorigin"
         preload_headers.append(header.encode())
 
     # Send a 103 response.
     early_hints = [(b":status", b"103")]
-    for header in preload_headers:
-        early_hints.append((b"link", header))
+    early_hints.extend((b"link", header) for header in preload_headers)
     response.writer.write_raw_header_frame(headers=early_hints,
                                            end_headers=True)
 

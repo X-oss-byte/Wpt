@@ -20,6 +20,4 @@ def main(request, response):
     # Requests without a body imply they were sent as the request from
     # nextAutomaticBeacon().
     data = request.server.stash.take(BEACON_KEY)
-    if not data and data != "":
-        return (200, [], b"<Not set>")
-    return (200, [], data)
+    return (200, [], b"<Not set>") if not data and data != "" else (200, [], data)

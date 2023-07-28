@@ -9,17 +9,10 @@ def main(request, response):
     token = request.GET.first(b"token", None)
     is_query = request.GET.first(b"query", None) is not None
     with request.server.stash.lock:
-      value = request.server.stash.take(token)
-      count = 0
-      if value is not None:
-        count = int(value)
-      if is_query:
+        value = request.server.stash.take(token)
+        count = int(value) if value is not None else 0
+        if not is_query:
+            count += 1
         request.server.stash.put(token, count)
-      else:
-        count += 1
-        request.server.stash.put(token, count)
-
-    headers = []
-    if is_query:
-      headers = [(b"Count", count)]
+    headers = [(b"Count", count)] if is_query else []
     return (200, headers, b"")

@@ -31,9 +31,7 @@ def get_request_timing_and_headers(request, id=None):
         id = request.GET.first(b"id")
     url_dir = _url_dir(request)
     item = request.server.stash.take(id, url_dir)
-    if not item:
-        return None
-    return json.dumps(item)
+    return None if not item else json.dumps(item)
 
 
 def wait_for_preload_to_finish(request, id):

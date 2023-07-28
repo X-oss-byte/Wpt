@@ -61,27 +61,27 @@ def write_test_file(idx, suffix, style, code, name=None):
                                               char=get_html_entity(code),
                                               code='U+{:04X}'.format(code),
                                               title=name))
-    print("== {} {}".format(filename, REF_FILE.format(idx)))
+    print(f"== {filename} {REF_FILE.format(idx)}")
 
 idx = 10
 def write_files(style, code):
     global idx
     idx += 1
     fill, shape = style
-    basic_style = "{} {}".format(fill, shape)
+    basic_style = f"{fill} {shape}"
     write_file(REF_FILE.format(idx),
                REF_TEMPLATE.format(basic_style, get_html_entity(code)))
     suffix = iter(SUFFIXES)
     write_test_file(idx, next(suffix), basic_style, code)
-    write_test_file(idx, next(suffix), "{} {}".format(shape, fill), code)
+    write_test_file(idx, next(suffix), f"{shape} {fill}", code)
     if fill == 'filled':
         write_test_file(idx, next(suffix), shape, code)
     if shape == 'circle':
-        write_test_file(idx, next(suffix), fill, code, fill + ', horizontal')
+        write_test_file(idx, next(suffix), fill, code, f'{fill}, horizontal')
 
-print("# START tests from {}".format(__file__))
+print(f"# START tests from {__file__}")
 for name, code, _ in DATA_SET:
     write_files(('filled', name), code)
 for name, _, code in DATA_SET:
     write_files(('open', name), code)
-print("# END tests from {}".format(__file__))
+print(f"# END tests from {__file__}")

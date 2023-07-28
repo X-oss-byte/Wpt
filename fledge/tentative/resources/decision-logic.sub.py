@@ -13,11 +13,7 @@ def main(request, response):
         response.close_connection = True
         return
 
-    if error == b"http-error":
-        response.status = (404, b"OK")
-    else:
-        response.status = (200, b"OK")
-
+    response.status = (404, b"OK") if error == b"http-error" else (200, b"OK")
     if error == b"wrong-content-type":
         response.headers.set(b"Content-Type", b"application/json")
     elif error != b"no-content-type":
@@ -33,7 +29,7 @@ def main(request, response):
     body = b''
     if error == b"no-body":
         return body
-    if error != b"no-scoreAd":
+    if error == b"no-reportResult":
         body += b"""
             function scoreAd(adMetadata, bid, auctionConfig, trustedScoringSignals,
                             browserSignals) {
@@ -46,7 +42,24 @@ def main(request, response):
               {{GET[scoreAd]}};
               return {desirability: 2 * bid, allowComponentAuction: true};
             }"""
-    if error != b"no-reportResult":
+    elif error == b"no-scoreAd":
+        body += b"""
+            function reportResult(auctionConfig, browserSignals, directFromSellerSignals) {
+              {{GET[reportResult]}};
+            }"""
+    else:
+        body += b"""
+            function scoreAd(adMetadata, bid, auctionConfig, trustedScoringSignals,
+                            browserSignals) {
+              // Don't bid on interest group with the wrong uuid. This is to prevent
+              // left over interest groups from other tests from affecting auction
+              // results.
+              if (!browserSignals.renderUrl.endsWith('{{GET[uuid]}}'))
+                return 0;
+
+              {{GET[scoreAd]}};
+              return {desirability: 2 * bid, allowComponentAuction: true};
+            }"""
         body += b"""
             function reportResult(auctionConfig, browserSignals, directFromSellerSignals) {
               {{GET[reportResult]}};

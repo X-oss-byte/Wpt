@@ -92,7 +92,7 @@ def _expand_nonfinite(method: str, argstr: str, tail: str) -> str:
         if match is None:
             raise InvalidTestDefinitionError(
                 f"Expected arg to match format '<(.*)>', but was: {arg}")
-        a = match.group(1)
+        a = match[1]
         args.append(a.split(' '))
     calls = []
     # Start with the valid argument list.
@@ -118,7 +118,7 @@ def _expand_nonfinite(method: str, argstr: str, tail: str) -> str:
 
     f(call, 0, 0)
 
-    return '\n'.join('%s(%s)%s' % (method, ', '.join(c), tail) for c in calls)
+    return '\n'.join(f"{method}({', '.join(c)}){tail}" for c in calls)
 
 
 def _get_test_sub_dir(name: str, name_to_sub_dir: Mapping[str, str]) -> str:
@@ -126,7 +126,8 @@ def _get_test_sub_dir(name: str, name_to_sub_dir: Mapping[str, str]) -> str:
         if name.startswith(prefix):
             return name_to_sub_dir[prefix]
     raise InvalidTestDefinitionError(
-        'Test "%s" has no defined target directory mapping' % name)
+        f'Test "{name}" has no defined target directory mapping'
+    )
 
 
 def _expand_test_code(code: str) -> str:
@@ -150,9 +151,10 @@ def _expand_test_code(code: str) -> str:
                   r'assert_throws_js(\1, function() { \2; });', code)
 
     code = re.sub(
-        r'@assert (.*) === (.*);', lambda m: '_assertSame(%s, %s, "%s", "%s");'
-        % (m.group(1), m.group(2), _escapeJS(m.group(1)), _escapeJS(m.group(2))
-           ), code)
+        r'@assert (.*) === (.*);',
+        lambda m: f'_assertSame({m.group(1)}, {m.group(2)}, "{_escapeJS(m.group(1))}", "{_escapeJS(m.group(2))}");',
+        code,
+    )
 
     code = re.sub(
         r'@assert (.*) !== (.*);', lambda m:
@@ -160,8 +162,10 @@ def _expand_test_code(code: str) -> str:
             2), _escapeJS(m.group(1)), _escapeJS(m.group(2))), code)
 
     code = re.sub(
-        r'@assert (.*) =~ (.*);', lambda m: 'assert_regexp_match(%s, %s);' % (
-            m.group(1), m.group(2)), code)
+        r'@assert (.*) =~ (.*);',
+        lambda m: f'assert_regexp_match({m.group(1)}, {m.group(2)});',
+        code,
+    )
 
     code = re.sub(
         r'@assert (.*);', lambda m: '_assert(%s, "%s");' % (m.group(
@@ -182,13 +186,13 @@ _CANVAS_SIZE_REGEX = re.compile(r'(?P<width>.*), (?P<height>.*)',
 
 def _get_canvas_size(test: Mapping[str, str]):
     size = test.get('size', '100, 50')
-    match = _CANVAS_SIZE_REGEX.match(size)
-    if not match:
+    if match := _CANVAS_SIZE_REGEX.match(size):
+        return match.group('width'), match.group('height')
+    else:
         raise InvalidTestDefinitionError(
             'Invalid canvas size "%s" in test %s. Expected a string matching '
             'this pattern: "%%s, %%s" %% (width, height)' %
             (size, test['name']))
-    return match.group('width'), match.group('height')
 
 
 def _generate_test(test: Mapping[str, str], templates: Mapping[str, str],
@@ -198,7 +202,7 @@ def _generate_test(test: Mapping[str, str], templates: Mapping[str, str],
 
     if test.get('expected', '') == 'green' and re.search(
             r'@assert pixel .* 0,0,0,0;', test['code']):
-        print('Probable incorrect pixel test in %s' % name)
+        print(f'Probable incorrect pixel test in {name}')
 
     code = _expand_test_code(test['code'].strip())
     code = textwrap.indent(code, '  ')
@@ -213,7 +217,7 @@ def _generate_test(test: Mapping[str, str], templates: Mapping[str, str],
             expected_img = '/images/clear-100x50.png'
         else:
             if ';' in expected:
-                print('Found semicolon in %s' % name)
+                print(f'Found semicolon in {name}')
             expected = re.sub(
                 r'^size (\d+) (\d+)',
                 r'surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, \1, \2)'
@@ -221,36 +225,32 @@ def _generate_test(test: Mapping[str, str], templates: Mapping[str, str],
 
             expected += ("\nsurface.write_to_png('%s.png')\n" %
                          os.path.join(image_output_dir, sub_dir, name))
-            eval(compile(expected, '<test %s>' % name, 'exec'), {},
-                 {'cairo': cairo})
-            expected_img = '%s.png' % name
+            eval(compile(expected, f'<test {name}>', 'exec'), {}, {'cairo': cairo})
+            expected_img = f'{name}.png'
 
         if expected_img:
-            expectation_html = (
-                '<p class="output expectedtext">Expected output:<p>'
-                '<img src="%s" class="output expected" id="expected" '
-                'alt="">' % expected_img)
+            expectation_html = f'<p class="output expectedtext">Expected output:<p><img src="{expected_img}" class="output expected" id="expected" alt="">'
 
     canvas = ' ' + test['canvas'] if 'canvas' in test else ''
     width, height = _get_canvas_size(test)
 
-    notes = '<p class="notes">%s' % test['notes'] if 'notes' in test else ''
+    notes = f"""<p class="notes">{test['notes']}""" if 'notes' in test else ''
 
     timeout = ('\n<meta name="timeout" content="%s">' %
                test['timeout'] if 'timeout' in test else '')
-    timeout_js = ('// META: timeout=%s\n' % test['timeout']
-                  if 'timeout' in test else '')
-
     images = ''
+    timeout_js = (
+        '// META: timeout=%s\n' % test['timeout'] if 'timeout' in test else ''
+    )
     for src in test.get('images', []):
         img_id = src.split('/')[-1]
         if '/' not in src:
-            src = '../images/%s' % src
+            src = f'../images/{src}'
         images += '<img src="%s" id="%s" class="resource">\n' % (src, img_id)
     for src in test.get('svgimages', []):
         img_id = src.split('/')[-1]
         if '/' not in src:
-            src = '../images/%s' % src
+            src = f'../images/{src}'
         images += ('<svg><image xlink:href="%s" id="%s" class="resource">'
                    '</svg>\n' % (src, img_id))
     images = images.replace('../images/', '/images/')
@@ -275,8 +275,8 @@ def _generate_test(test: Mapping[str, str], templates: Mapping[str, str],
 
     attributes = test.get('attributes', '')
     if attributes:
-        context_args = "'2d', %s" % attributes.strip()
-        attributes = ', ' + attributes.strip()
+        context_args = f"'2d', {attributes.strip()}"
+        attributes = f', {attributes.strip()}'
     else:
         context_args = "'2d'"
 
@@ -326,15 +326,12 @@ def genTestUtils(TESTOUTPUTDIR: str, IMAGEOUTPUTDIR: str, TEMPLATEFILE: str,
     name_to_sub_dir = yaml.safe_load(pathlib.Path(NAME2DIRFILE).read_text())
 
     tests = []
-    test_yaml_directory = 'yaml/element'
-    if ISOFFSCREENCANVAS:
-        test_yaml_directory = 'yaml/offscreen'
+    test_yaml_directory = 'yaml/offscreen' if ISOFFSCREENCANVAS else 'yaml/element'
     TESTSFILES = [
         os.path.join(test_yaml_directory, f)
         for f in os.listdir(test_yaml_directory) if f.endswith('.yaml')
     ]
-    for t in sum(
-        [yaml.safe_load(pathlib.Path(f).read_text()) for f in TESTSFILES], []):
+    for t in sum((yaml.safe_load(pathlib.Path(f).read_text()) for f in TESTSFILES), []):
         if 'DISABLED' in t:
             continue
         if 'meta' in t:
@@ -345,8 +342,10 @@ def genTestUtils(TESTOUTPUTDIR: str, IMAGEOUTPUTDIR: str, TEMPLATEFILE: str,
 
     # Ensure the test output directories exist.
     testdirs = [TESTOUTPUTDIR, IMAGEOUTPUTDIR]
-    for sub_dir in set(name_to_sub_dir.values()):
-        testdirs.append('%s/%s' % (TESTOUTPUTDIR, sub_dir))
+    testdirs.extend(
+        f'{TESTOUTPUTDIR}/{sub_dir}'
+        for sub_dir in set(name_to_sub_dir.values())
+    )
     for d in testdirs:
         try:
             os.mkdir(d)
@@ -359,7 +358,7 @@ def genTestUtils(TESTOUTPUTDIR: str, IMAGEOUTPUTDIR: str, TEMPLATEFILE: str,
         print('\r(%s)' % name, ' ' * 32, '\t')
 
         if name in used_tests:
-            print('Test %s is defined twice' % name)
+            print(f'Test {name} is defined twice')
         used_tests[name] = 1
 
         sub_dir = _get_test_sub_dir(name, name_to_sub_dir)

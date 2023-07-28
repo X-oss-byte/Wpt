@@ -14,8 +14,5 @@ def main(request, response):
   body = body.replace(b"%HEADERS%", json.dumps(data).encode("utf-8"))
   body = body.replace(b"%UUID%", str(uuid.uuid4()).encode("utf-8"))
 
-  headers = []
-  headers.append((b"ETag", b"etag"))
-  headers.append((b"Content-Type", b'text/javascript'))
-
+  headers = [(b"ETag", b"etag"), (b"Content-Type", b'text/javascript')]
   return headers, body

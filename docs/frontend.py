@@ -35,11 +35,10 @@ def link_source_dirs():
                 created.add(dest_dir)
             if not os.path.exists(dest):
                 os.symlink(src, dest, target_is_directory=True)
-            else:
-                if (not os.path.islink(dest) or
+            elif (not os.path.islink(dest) or
                     os.path.join(os.path.dirname(dest), os.readlink(dest)) != src):
-                    # The file exists but it isn't a link or points at the wrong target
-                    raise OSError("File exists")
+                # The file exists but it isn't a link or points at the wrong target
+                raise OSError("File exists")
         except Exception as e:
             failed.append((dest, e))
         else:
@@ -74,19 +73,21 @@ def docker_build(tag="wpt:docs"):
                            here])
 
 def docker_run(**kwargs):
-    cmd = ["docker", "run"]
-    cmd.extend(["--mount",
-                 "type=bind,source=%s,target=/app/web-platform-tests" % wpt_root])
+    cmd = [
+        "docker",
+        "run",
+        *[
+            "--mount",
+            f"type=bind,source={wpt_root},target=/app/web-platform-tests",
+        ],
+    ]
     if kwargs["serve"] is not None:
         serve = str(kwargs["serve"])
         cmd.extend(["--expose", serve, "--publish", f"{serve}:{serve}"])
     cmd.extend(["-w", "/app/web-platform-tests"])
     if os.isatty(os.isatty(sys.stdout.fileno())):
         cmd.append("-it")
-    cmd.extend(["wpt:docs", "./wpt"])
-    # /app/venv is created during docker build and is always active inside the
-    # container.
-    cmd.extend(["--venv", "/app/venv", "--skip-venv-setup"])
+    cmd.extend(["wpt:docs", "./wpt", "--venv", "/app/venv", "--skip-venv-setup"])
     cmd.extend(["build-docs", "--type", kwargs["type"]])
     if kwargs["serve"] is not None:
         cmd.extend(["--serve", str(kwargs["serve"])])

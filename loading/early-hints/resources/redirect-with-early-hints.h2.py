@@ -1,6 +1,6 @@
 def handle_headers(frame, request, response):
     preload_url = request.GET.first(b"preload-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(preload_url)
+    link_header_value = f"<{preload_url}>; rel=preload; as=script"
 
     early_hints = [
         (b":status", b"103"),
@@ -10,7 +10,7 @@ def handle_headers(frame, request, response):
                                            end_headers=True)
 
     redirect_url = request.GET.first(b"redirect-url").decode()
-    location = "{}?preload-url={}".format(redirect_url, preload_url)
+    location = f"{redirect_url}?preload-url={preload_url}"
     response.status = 302
     response.headers["location"] = location
     response.write_status_headers()

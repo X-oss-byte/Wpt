@@ -39,10 +39,10 @@ def quote_str(cookie_str):
 
 def parse_qs_str(query_str):
   args = parse_qs(isomorphic_decode(query_str), keep_blank_values=True, encoding=u'iso-8859-1')
-  binary_args = {}
-  for key, val in args.items():
-    binary_args[isomorphic_encode(key)] = [isomorphic_encode(x) for x in val]
-  return binary_args
+  return {
+      isomorphic_encode(key): [isomorphic_encode(x) for x in val]
+      for key, val in args.items()
+  }
 
 def main(request, response):
   assert request.method in (

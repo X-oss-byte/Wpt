@@ -1,11 +1,12 @@
 def main(request, response):
-    headers = [(b"Content-Type", b"text/plain")]
-    headers.append((b"Access-Control-Allow-Origin", b"*"))
-
+    headers = [
+        (b"Content-Type", b"text/plain"),
+        (b"Access-Control-Allow-Origin", b"*"),
+    ]
     if request.method == u"GET":
         token = request.GET.first(b"token")
         value = request.server.stash.take(token)
-        if value == None:
+        if value is None:
             body = u"0"
         else:
             if request.GET.first(b"check", None) == b"keep":
@@ -15,7 +16,7 @@ def main(request, response):
         return headers, body
 
     if request.method == u"OPTIONS":
-        if not b"Access-Control-Request-Method" in request.headers:
+        if b"Access-Control-Request-Method" not in request.headers:
             response.set_error(400, u"No Access-Control-Request-Method header")
             return u"ERROR: No access-control-request-method in preflight!"
 

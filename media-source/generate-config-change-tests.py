@@ -97,10 +97,7 @@ def run(cmd_line):
     os.system(" ".join(cmd_line))
 
 def generate_manifest(filename, media_filename, media_format, has_audio, has_video):
-    major_type = "audio"
-    if has_video:
-        major_type = "video"
-
+    major_type = "video" if has_video else "audio"
     codecs = []
     if has_video:
         codecs.append(CODEC_INFO[media_format]["video"])
@@ -112,20 +109,18 @@ def generate_manifest(filename, media_filename, media_format, has_audio, has_vid
 
     manifest = { 'url': media_filename, 'type': mimetype}
 
-    f = open(filename, "wb")
-    f.write(json.dumps(manifest, indent=4, separators=(',', ': ')))
-    f.close()
+    with open(filename, "wb") as f:
+        f.write(json.dumps(manifest, indent=4, separators=(',', ': ')))
 
 def generate_test_html(media_format, config_change_tests, encoding_ids):
     for test_info in config_change_tests:
-        filename = "../../media-source/mediasource-config-change-%s-%s.html" % (media_format, test_info[0])
+        filename = f"../../media-source/mediasource-config-change-{media_format}-{test_info[0]}.html"
         html = HTML_TEMPLATE % {'media_format': media_format,
                                  'idA': encoding_ids[test_info[1]],
                                  'idB': encoding_ids[test_info[2]],
                                  'description':  test_info[3] % (media_format)}
-        f = open(filename, "wb")
-        f.write(html)
-        f.close()
+        with open(filename, "wb") as f:
+            f.write(html)
 
 
 def main():
@@ -157,30 +152,35 @@ def main():
             id_params = ""
             if has_audio:
                 id_prefix += "a"
-                id_params += "-%sHz-%sch" % (sample_rate, channels)
+                id_params += f"-{sample_rate}Hz-{channels}ch"
 
                 channel_layout = "FC"
-                sin_func = "sin(%s*2*PI*t)" % frequency
+                sin_func = f"sin({frequency}*2*PI*t)"
                 func = sin_func
                 if channels == 2:
                     channel_layout += "|BC"
-                    func += "|" + sin_func
+                    func += f"|{sin_func}"
 
                 cmdline += ["-f", "lavfi", "-i", "aevalsrc=\"%s:s=%s:c=%s:d=%s\"" % (func, sample_rate, channel_layout, DURATION)]
 
             if has_video:
                 id_prefix += "v"
-                id_params += "-%s-%sfps-%skfr" % (frame_size, frame_rate, keyframe_rate)
+                id_params += f"-{frame_size}-{frame_rate}fps-{keyframe_rate}kfr"
 
-                cmdline += ["-f", "lavfi", "-i", "color=%s:duration=%s:size=%s:rate=%s" % (color, DURATION, frame_size, frame_rate)]
+                cmdline += [
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    f"color={color}:duration={DURATION}:size={frame_size}:rate={frame_rate}",
+                ]
 
             if has_audio:
-                cmdline += ["-b:a", "%sk" % audio_bitrate]
+                cmdline += ["-b:a", f"{audio_bitrate}k"]
 
             if has_video:
-                cmdline += ["-b:v", "%sk" % video_bitrate]
-                cmdline += ["-keyint_min", "%s" % keyframe_rate]
-                cmdline += ["-g", "%s" % keyframe_rate]
+                cmdline += ["-b:v", f"{video_bitrate}k"]
+                cmdline += ["-keyint_min", f"{keyframe_rate}"]
+                cmdline += ["-g", f"{keyframe_rate}"]
 
 
                 textOverlayInfo = "'drawtext=fontfile=Mono:fontsize=32:text=Time\\\\:\\\\ %{pts}"
@@ -196,30 +196,30 @@ def main():
                 textOverlayInfo += "'"
                 cmdline += ["-vf", textOverlayInfo]
 
-            encoding_id = "%s-%sk%s" % (id_prefix, bitrate, id_params)
+            encoding_id = f"{id_prefix}-{bitrate}k{id_params}"
 
             if len(encoding_ids) < len(ENCODE_SETTINGS):
                 encoding_ids.append(encoding_id)
 
-            filename_base = "%s/test-%s" % (media_format, encoding_id)
-            media_filename = filename_base + "." + media_format
-            manifest_filename = filename_base + "-manifest.json"
+            filename_base = f"{media_format}/test-{encoding_id}"
+            media_filename = f"{filename_base}.{media_format}"
+            manifest_filename = f"{filename_base}-manifest.json"
 
             cmdline.append(media_filename)
             run(cmdline)
 
             # Remux file so it conforms to MSE bytestream requirements.
             if media_format == "webm":
-                tmp_filename = media_filename + ".tmp"
+                tmp_filename = f"{media_filename}.tmp"
                 run(["mse_webm_remuxer", media_filename, tmp_filename])
                 run(["mv", tmp_filename, media_filename])
             elif media_format == "mp4":
                 run(["MP4Box", "-dash", "250", "-rap", media_filename])
-                run(["mv", filename_base + "_dash.mp4", media_filename])
-                run(["rm", filename_base + "_dash.mpd"])
+                run(["mv", f"{filename_base}_dash.mp4", media_filename])
+                run(["rm", f"{filename_base}_dash.mpd"])
 
             generate_manifest(manifest_filename, media_filename, media_format, has_audio, has_video)
         generate_test_html(media_format, CONFIG_CHANGE_TESTS, encoding_ids)
 
-if '__main__' == __name__:
+if __name__ == '__main__':
     main()

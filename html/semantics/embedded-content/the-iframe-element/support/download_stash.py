@@ -5,10 +5,7 @@ def main(request, response):
     response.status = 200
     response.headers.append(b"Content-Type", b"text/html")
     if b"verify-token" in request.GET:
-      if request.server.stash.take(token):
-        return u'TOKEN_SET'
-      return u'TOKEN_NOT_SET'
-
+        return u'TOKEN_SET' if request.server.stash.take(token) else u'TOKEN_NOT_SET'
     if b"finish-delay" not in request.GET:
       # <a download>
       request.server.stash.put(token, True)
@@ -20,7 +17,7 @@ def main(request, response):
     finish_delay = float(request.GET[b"finish-delay"]) / 1E3
     count = 10
     single_delay = finish_delay / count
-    for i in range(count): # pylint: disable=unused-variable
+    for _ in range(count):
         time.sleep(single_delay)
         if not response.writer.write_content(b"\n"):
           return

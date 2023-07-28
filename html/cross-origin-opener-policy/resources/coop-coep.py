@@ -1,10 +1,7 @@
 import json
 
 def main(request, response):
-    requestData = request.GET
-    if request.method == u"POST":
-        requestData = request.POST
-
+    requestData = request.POST if request.method == u"POST" else request.GET
     coop = requestData.first(b"coop")
     coopReportOnly = requestData.first(b"coop-report-only", None)
     coep = requestData.first(b"coep")

@@ -40,8 +40,6 @@ def main(request, response):
     elif tao == b'uppercase':
     # non-case-sensitive match for origin, fail
         response.headers.set(b'Timing-Allow-Origin', origin.upper())
-    else:
-        pass
     response.headers.set(b"Cache-Control", b"no-cache, must-revalidate");
     image_path = os.path.join(os.path.dirname(isomorphic_encode(__file__)), b"square100.png");
     response.content = open(image_path, mode=u'rb').read();

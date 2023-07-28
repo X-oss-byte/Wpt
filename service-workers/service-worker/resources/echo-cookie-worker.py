@@ -3,9 +3,10 @@ def main(request, response):
 
     values = []
     for key in request.cookies:
-        for cookie in request.cookies.get_list(key):
-            values.append(b'"%s": "%s"' % (key, cookie.value))
-
+        values.extend(
+            b'"%s": "%s"' % (key, cookie.value)
+            for cookie in request.cookies.get_list(key)
+        )
     # Update the counter to change the script body for every request to trigger
     # update of the service worker.
     key = request.GET[b'key']

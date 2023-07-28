@@ -9,9 +9,7 @@ def escape_byte(byte):
     byte = bytes([byte])
     if b"\0" <= byte <= b"\x1F" or byte >= b"\x7F":
         return b"\\x%02x" % ord(byte)
-    if byte == b"\\":
-        return b"\\\\"
-    return byte
+    return b"\\\\" if byte == b"\\" else byte
 
 def main(request, response):
 

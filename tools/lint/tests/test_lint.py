@@ -13,7 +13,7 @@ _dummy_repo = os.path.join(os.path.dirname(__file__), "dummy")
 
 def _mock_lint(name, **kwargs):
     wrapped = getattr(lint_mod, name)
-    return mock.patch(lint_mod.__name__ + "." + name, wraps=wrapped, **kwargs)
+    return mock.patch(f"{lint_mod.__name__}.{name}", wraps=wrapped, **kwargs)
 
 
 def test_filter_ignorelist_errors():
@@ -401,7 +401,7 @@ def test_main_with_args():
     orig_argv = sys.argv
     try:
         sys.argv = ['./lint', 'a', 'b', 'c']
-        with mock.patch(lint_mod.__name__ + ".os.path.isfile") as mock_isfile:
+        with mock.patch(f"{lint_mod.__name__}.os.path.isfile") as mock_isfile:
             mock_isfile.return_value = True
             with _mock_lint('lint', return_value=True) as m:
                 lint_mod.main(**vars(create_parser().parse_args()))

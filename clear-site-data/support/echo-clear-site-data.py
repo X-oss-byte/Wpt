@@ -33,7 +33,7 @@ RESPONSE = u"""
 # of the datatypes, so that if used in an iframe, it can inform the
 # embedder whether the data deletion succeeded.
 def main(request, response):
-    types = [key for key in request.GET.keys()]
+    types = list(request.GET.keys())
     header = b",".join(b"\"" + type + b"\"" for type in types)
     return ([(b"Clear-Site-Data", header),
              (b"Content-Type", b"text/html")],

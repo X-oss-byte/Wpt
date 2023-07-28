@@ -35,10 +35,9 @@ def test_forbidden_path_length():
                                                    (".any.worker.html", ".any.js"),
                                                    (".any.html", ".any.js")])
 def test_forbidden_path_endings(path_ending, generated):
-    path = "test/test" + path_ending
+    path = f"test/test{path_ending}"
 
-    message = ("path ends with %s which collides with generated tests from %s files" %
-               (path_ending, generated))
+    message = f"path ends with {path_ending} which collides with generated tests from {generated} files"
 
     errors = check_path("/foo/", path)
     check_errors(errors)

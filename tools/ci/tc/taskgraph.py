@@ -151,7 +151,7 @@ def load_tasks(tasks_data):
             data = task[name]
             new_name = sub_variables(name, {"vars": data.get("vars", {})})
             if new_name in map_resolved_tasks:
-                raise ValueError("Got duplicate task name %s" % new_name)
+                raise ValueError(f"Got duplicate task name {new_name}")
             map_resolved_tasks[new_name] = substitute_variables(data)
 
     for task_default_name, data in map_resolved_tasks.items():

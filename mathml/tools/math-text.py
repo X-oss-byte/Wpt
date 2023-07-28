@@ -55,7 +55,7 @@ font.os2_windescent_add = False
 font.os2_use_typo_metrics = True
 
 path = "../../fonts/math/math-text.woff"
-print("Generating %s..." % path, end="")
+print(f"Generating {path}...", end="")
 font.generate(path)
 if font.validate() == 0:
     print(" done.")

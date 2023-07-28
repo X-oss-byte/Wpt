@@ -167,17 +167,16 @@ async_test(function(t) {
   }, 'Redirected fetch test for connect-src');'''
 
 def main(request, response):
-    headers = []
-    headers.append((b'Content-Type', b'application/javascript'))
+    headers = [(b'Content-Type', b'application/javascript')]
     directive = request.GET[b'directive']
     body = b'ERROR: Unknown directive'
-    if directive == b'default':
+    if directive == b'connect':
+        headers.append((b'Content-Security-Policy', b"connect-src 'self'"))
+        body = bodyConnect
+    elif directive == b'default':
         headers.append((b'Content-Security-Policy', b"default-src 'self'"))
         body = bodyDefault
     elif directive == b'script':
         headers.append((b'Content-Security-Policy', b"script-src 'self'"))
         body = bodyScript
-    elif directive == b'connect':
-        headers.append((b'Content-Security-Policy', b"connect-src 'self'"))
-        body = bodyConnect
     return headers, body

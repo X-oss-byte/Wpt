@@ -14,12 +14,12 @@ def get_browser_args(product, channel):
     if product == "firefox":
         local_binary = os.path.expanduser(os.path.join("~", "build", "firefox", "firefox"))
         if os.path.exists(local_binary):
-            return ["--binary=%s" % local_binary]
+            return [f"--binary={local_binary}"]
         print("WARNING: Local firefox binary not found")
         return ["--install-browser", "--install-webdriver"]
     if product == "servo":
         return ["--install-browser", "--processes=12"]
-    if product == "chrome" or product == "chromium":
+    if product in ["chrome", "chromium"]:
         # Taskcluster machines do not have GPUs, so use software rendering via --enable-swiftshader.
         args = ["--enable-swiftshader"]
         if channel == "nightly":
@@ -46,7 +46,7 @@ def find_wptscreenshot(args):
 
 def gzip_file(filename, delete_original=True):
     with open(filename, 'rb') as f_in:
-        with gzip.open('%s.gz' % filename, 'wb') as f_out:
+        with gzip.open(f'{filename}.gz', 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     if delete_original:
         os.unlink(filename)
@@ -67,9 +67,7 @@ def main(product, channel, commit_range, wpt_args):
     subprocess.call(['python3', './wpt', 'manifest-download'])
 
     if commit_range:
-        logger.info(
-            "Running tests affected in range '%s'..." % commit_range
-        )
+        logger.info(f"Running tests affected in range '{commit_range}'...")
         wpt_args += ['--affected', commit_range]
     else:
         logger.info("Running all tests")
@@ -92,7 +90,7 @@ def main(product, channel, commit_range, wpt_args):
 
     command = ["python3", "./wpt", "run"] + wpt_args + [product]
 
-    logger.info("Executing command: %s" % " ".join(command))
+    logger.info(f'Executing command: {" ".join(command)}')
     with open("/home/test/artifacts/checkrun.md", "a") as f:
         f.write("\n**WPT Command:** `%s`\n\n" % " ".join(command))
 
@@ -100,11 +98,9 @@ def main(product, channel, commit_range, wpt_args):
     if retcode != 0:
         sys.exit(retcode)
 
-    wptreport = find_wptreport(wpt_args)
-    if wptreport:
+    if wptreport := find_wptreport(wpt_args):
         gzip_file(wptreport)
-    wptscreenshot = find_wptscreenshot(wpt_args)
-    if wptscreenshot:
+    if wptscreenshot := find_wptscreenshot(wpt_args):
         gzip_file(wptscreenshot)
 
 

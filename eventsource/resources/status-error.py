@@ -7,9 +7,5 @@ def main(request, response):
   # currently defined--see the following for further discussion:
   #
   # https://github.com/web-platform-tests/wpt/pull/5227
-  if status[0] in [b"204", b"205"]:
-      body = b""
-  else:
-      body = b"data: data\n\n"
-
+  body = b"" if status[0] in [b"204", b"205"] else b"data: data\n\n"
   return status, headers, body

@@ -30,24 +30,19 @@ def main(request, response):
 
         # Push into the |uuid| queue, the requested headers.
         if b"show-headers" in request.GET:
-            headers = {};
-            for key, value in request.headers.items():
-                headers[isomorphic_decode(key)] = isomorphic_decode(request.headers[key])
+            headers = {
+                isomorphic_decode(key): isomorphic_decode(request.headers[key])
+                for key, value in request.headers.items()
+            }
             headers = json.dumps(headers);
             queue.append(headers);
             ret = b'';
 
-        # Push into the |uuid| queue, the posted data.
         elif request.method == u'POST':
             queue.append(request.body)
             ret = b'done'
 
-        # Pull from the |uuid| queue, the posted data.
         else:
-            if len(queue) == 0:
-                ret = b'not ready'
-            else:
-                ret = queue.pop(0)
-
+            ret = b'not ready' if len(queue) == 0 else queue.pop(0)
         stash.put(uuid, queue, '/common/dispatcher')
     return ret;

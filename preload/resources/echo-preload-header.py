@@ -9,8 +9,7 @@ def main(request, response):
     if link is not None:
         response.headers.set(b"Link", link)
 
-    if b"file" in request.GET:
-        path = os.path.join(os.path.dirname(isomorphic_encode(__file__)), request.GET.first(b"file"));
-        response.content = open(path, mode=u'rb').read();
-    else:
+    if b"file" not in request.GET:
         return request.GET.first(b"content")
+    path = os.path.join(os.path.dirname(isomorphic_encode(__file__)), request.GET.first(b"file"));
+    response.content = open(path, mode=u'rb').read();

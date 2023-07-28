@@ -20,8 +20,7 @@ def main(request, response):
 
     with request.server.stash.lock:
         body = {'data': []}
-        data = request.server.stash.take(key=uuid, path=_BEACON_DATA_PATH)
-        if data:
+        if data := request.server.stash.take(key=uuid, path=_BEACON_DATA_PATH):
             body['data'] = data
             # The stash is read-once/write-once, so it has to be put back after
             # reading if `data` is not None.

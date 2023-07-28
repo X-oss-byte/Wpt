@@ -18,7 +18,8 @@
 
 import os, shutil
 
-target_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/generated"
+target_dir = (
+    f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/generated")
 
 delay = u'1500'  # Lower value makes the test complete faster, but also higher risk of flaky results
 
@@ -659,40 +660,36 @@ if os.path.isdir(target_dir):
           os.remove(path)
 
 def write_file(path, content):
-    path = os.path.join(target_dir, path)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    file = open(os.path.join(target_dir, path), 'w')
+  path = os.path.join(target_dir, path)
+  os.makedirs(os.path.dirname(path), exist_ok=True)
+  with open(os.path.join(target_dir, path), 'w') as file:
     file.write(content)
-    file.close()
 
 def generate_tests(testcase, tentative):
-    title, encoding, template_testcase_markup, template_nonspeculative_testcase_markup, expect_load, test_nonspeculative = testcase
-    if template_nonspeculative_testcase_markup == None:
-        template_nonspeculative_testcase_markup = template_testcase_markup
-    ext = u""
-    if tentative:
-        ext = u".tentative"
+  title, encoding, template_testcase_markup, template_nonspeculative_testcase_markup, expect_load, test_nonspeculative = testcase
+  if template_nonspeculative_testcase_markup is None:
+    template_nonspeculative_testcase_markup = template_testcase_markup
+  ext = u".tentative" if tentative else u""
+  if encoding is None:
+    encoding_decl = no_meta_charset
+  else:
+    encoding_decl = f"<meta charset={encoding}>"
 
-    if encoding == None:
-        encoding_decl = no_meta_charset
-    else:
-        encoding_decl = f"<meta charset={encoding}>"
+  html_testcase_markup = template_testcase_markup.format(url_wptserve_sub)
+  html_nonspeculative_testcase_markup = template_nonspeculative_testcase_markup.format(url_wptserve_sub)
+  js_testcase_markup = template_testcase_markup.format(url_js_sub).replace(u"</script>", u"<\/script>").replace(u"<meta charset", u"<meta\ charset")
 
-    html_testcase_markup = template_testcase_markup.format(url_wptserve_sub)
-    html_nonspeculative_testcase_markup = template_nonspeculative_testcase_markup.format(url_wptserve_sub)
-    js_testcase_markup = template_testcase_markup.format(url_js_sub).replace(u"</script>", u"<\/script>").replace(u"<meta charset", u"<meta\ charset")
+  if test_nonspeculative == u'true':
+      nonspeculative = template_nonspeculative.format(preamble=preamble, encoding_decl=encoding_decl, title=title, nonspeculative_testcase_markup=html_nonspeculative_testcase_markup, delay=delay)
+      write_file(f"resources/{title}-nonspeculative.sub.html", nonspeculative)
 
-    if test_nonspeculative == u'true':
-        nonspeculative = template_nonspeculative.format(preamble=preamble, encoding_decl=encoding_decl, title=title, nonspeculative_testcase_markup=html_nonspeculative_testcase_markup, delay=delay)
-        write_file(f"resources/{title}-nonspeculative.sub.html", nonspeculative)
+  pageload_toplevel = template_pageload_toplevel.format(preamble=preamble, encoding_decl=encoding_decl, title=title, expect_load=expect_load, test_nonspeculative=test_nonspeculative)
+  write_file(f"page-load/{title}{ext}.html", pageload_toplevel)
+  pageload_framed = template_pageload_framed.format(preamble=preamble, encoding_decl=encoding_decl, title=title, testcase_markup=html_testcase_markup, delay=delay)
+  write_file(f"page-load/resources/{title}-framed.sub.html", pageload_framed)
 
-    pageload_toplevel = template_pageload_toplevel.format(preamble=preamble, encoding_decl=encoding_decl, title=title, expect_load=expect_load, test_nonspeculative=test_nonspeculative)
-    write_file(f"page-load/{title}{ext}.html", pageload_toplevel)
-    pageload_framed = template_pageload_framed.format(preamble=preamble, encoding_decl=encoding_decl, title=title, testcase_markup=html_testcase_markup, delay=delay)
-    write_file(f"page-load/resources/{title}-framed.sub.html", pageload_framed)
-
-    docwrite = template_docwrite.format(preamble=preamble, encoding_decl=encoding_decl, title=title, expect_load=expect_load, testcase_markup=js_testcase_markup, test_nonspeculative=test_nonspeculative, delay=delay)
-    write_file(f"document-write/{title}{ext}.sub.html", docwrite)
+  docwrite = template_docwrite.format(preamble=preamble, encoding_decl=encoding_decl, title=title, expect_load=expect_load, testcase_markup=js_testcase_markup, test_nonspeculative=test_nonspeculative, delay=delay)
+  write_file(f"document-write/{title}{ext}.sub.html", docwrite)
 
 for testcase in tests:
     generate_tests(testcase, False)

@@ -32,9 +32,8 @@ def load_spec_json(path_to_spec):
             return json5.load(f, object_pairs_hook=collections.OrderedDict)
         except ValueError as ex:
             print(ex.message)
-            match = re_error_location.search(ex.message)
-            if match:
-                line_number, column = int(match.group(1)), int(match.group(2))
+            if match := re_error_location.search(ex.message):
+                line_number, column = int(match[1]), int(match[2])
                 print(read_nth_line(f, line_number).rstrip())
                 print(" " * (column - 1) + "^")
             sys.exit(1)
@@ -128,7 +127,7 @@ class PolicyDelivery(object):
             policy_delivery = PolicyDelivery(obj['deliveryType'], obj['key'],
                                              obj['value'])
         else:
-            raise Exception('policy delivery is invalid: ' + obj)
+            raise Exception(f'policy delivery is invalid: {obj}')
 
         # Omit unsupported combinations of source contexts and delivery type.
         if policy_delivery.delivery_type not in supported_delivery_types:
@@ -179,7 +178,7 @@ class PolicyDelivery(object):
             else:
                 return PolicyDelivery(delivery_type, self.key, 'upgrade')
         else:
-            raise Exception('delivery key is invalid: ' + self.key)
+            raise Exception(f'delivery key is invalid: {self.key}')
 
 
 class SourceContext(object):

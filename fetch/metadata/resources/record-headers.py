@@ -9,12 +9,10 @@ def bytes_to_strings(d):
   # Recursively convert bytes to strings in `d`.
   if not isinstance(d, dict):
     if isinstance(d, (tuple,list,set)):
-      v = [bytes_to_strings(x) for x in d]
-      return v
-    else:
-      if isinstance(d, bytes):
-        d = d.decode()
-      return d
+      return [bytes_to_strings(x) for x in d]
+    if isinstance(d, bytes):
+      d = d.decode()
+    return d
 
   result = {}
   for k,v in d.items():

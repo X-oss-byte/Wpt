@@ -64,10 +64,8 @@ def write_file(filename, content):
     with open(filename, 'wb') as f:
         f.write(content.encode('UTF-8'))
 
-print("# START tests from {}".format(__file__))
-idx = 0
-for (pos, emphasis_pos, ruby_pos, wms, dir) in POSITIONS:
-    idx += 1
+print(f"# START tests from {__file__}")
+for idx, (pos, emphasis_pos, ruby_pos, wms, dir) in enumerate(POSITIONS, start=1):
     ref_file = REF_FILE.format(idx)
     content = REF_TEMPLATE.format(pos=pos, dir=dir, wm=wms[0], posval=ruby_pos)
     write_file(ref_file, content)
@@ -80,5 +78,5 @@ for (pos, emphasis_pos, ruby_pos, wms, dir) in POSITIONS:
                 pos=pos, wm=wm, tag=tag, index=idx, dir=dir,
                 start=start.format(style1=style1, style2=STYLE2), end=end)
             write_file(test_file, content)
-            print("== {} {}".format(test_file, ref_file))
-print("# END tests from {}".format(__file__))
+            print(f"== {test_file} {ref_file}")
+print(f"# END tests from {__file__}")

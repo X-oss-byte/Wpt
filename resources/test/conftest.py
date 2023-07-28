@@ -95,7 +95,7 @@ def _summarize(actual):
         return copy
 
     def _expand_status(status_obj):
-        for key, value in [item for item in status_obj.items()]:
+        for key, value in list(status_obj.items()):
             # In "status" and "test" objects, the "status" value enum
             # definitions are interspersed with properties for unrelated
             # metadata. The following condition is a best-effort attempt to
@@ -159,7 +159,7 @@ class HTMLItem(pytest.Item, pytest.Collector):
             handle.close()
 
         if test_type not in TEST_TYPES:
-            raise ValueError('Unrecognized test type: "%s"' % test_type)
+            raise ValueError(f'Unrecognized test type: "{test_type}"')
 
         parsed = html5lib.parse(markup, namespaceHTMLElements=False)
         name = None
@@ -174,11 +174,11 @@ class HTMLItem(pytest.Item, pytest.Collector):
                     try:
                         self.expected = json.loads(element.text)
                     except ValueError:
-                        print("Failed parsing JSON in %s" % filename)
+                        print(f"Failed parsing JSON in {filename}")
                         raise
 
         if not name:
-            raise ValueError('No name found in %s add a <title> element' % filename)
+            raise ValueError(f'No name found in {filename} add a <title> element')
         elif self.type == 'functional':
             if not self.expected:
                 raise ValueError('Functional tests must specify expected report data')
@@ -216,7 +216,7 @@ class HTMLItem(pytest.Item, pytest.Collector):
         driver.url = server.url(HARNESS)
 
         actual = driver.execute_async_script(
-            'runTest("%s", "foo", arguments[0])' % self.url
+            f'runTest("{self.url}", "foo", arguments[0])'
         )
 
         summarized = _summarize(copy.deepcopy(actual))
@@ -235,7 +235,9 @@ class HTMLItem(pytest.Item, pytest.Collector):
         driver.url = server.url(HARNESS)
 
         test_url = self.url
-        actual = driver.execute_async_script('runTest("%s", "foo", arguments[0])' % test_url)
+        actual = driver.execute_async_script(
+            f'runTest("{test_url}", "foo", arguments[0])'
+        )
 
         print(json.dumps(actual, indent=2))
 

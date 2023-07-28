@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, shutil
 
-target_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/compute-kind-widget-generated"
+target_dir = f"{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/compute-kind-widget-generated"
 
 props = [
   u"background-color",
@@ -109,9 +109,8 @@ if os.path.isdir(target_dir):
 def write_file(path, content):
     path = os.path.join(target_dir, path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    file = open(os.path.join(target_dir, path), 'w')
-    file.write(content)
-    file.close()
+    with open(os.path.join(target_dir, path), 'w') as file:
+        file.write(content)
 
 def generate_tests(prop, el_id, el_markup):
     test = template.format(prop=prop, el_id=el_id, el_markup=el_markup)

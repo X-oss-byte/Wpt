@@ -4,7 +4,7 @@ import os
 def handle_headers(frame, request, response):
     # Send a 103 response.
     resource_url = request.GET.first(b"resource-url").decode()
-    link_header_value = "<{}>; rel=preload; as=script".format(resource_url)
+    link_header_value = f"<{resource_url}>; rel=preload; as=script"
     coep_value = request.GET.first(b"early-hints-policy").decode()
     early_hints = [
         (b":status", b"103"),

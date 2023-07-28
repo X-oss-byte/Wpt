@@ -64,15 +64,11 @@ def main(request, response):
                 if b"payload" in request.POST:
                     # The payload was sent as a FormData.
                     payload = request.POST.first(b"payload")
-                else:
-                    # A FormData was sent with an empty payload.
-                    pass
             else:
                 # The payload was sent as either a string, Blob, or BufferSource.
                 payload = request.body
 
-            payload_parts = list(filter(None, payload.split(b":")))
-            if len(payload_parts) > 0:
+            if payload_parts := list(filter(None, payload.split(b":"))):
                 payload_size = int(payload_parts[0])
 
                 # Confirm the payload size sent matches with the number of

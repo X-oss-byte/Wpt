@@ -41,6 +41,4 @@ def main(request, response):
 
     # Get the value.
     data = request.server.stash.take(key)
-    if not data and data != "":
-        return (200, [], b"<Not set>")
-    return (200, [], data)
+    return (200, [], b"<Not set>") if not data and data != "" else (200, [], data)

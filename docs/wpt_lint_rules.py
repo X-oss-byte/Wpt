@@ -28,7 +28,7 @@ class WPTLintRules(Directive):
             module = importlib.import_module(self.module_specifier)
         except ImportError:
             raise ImportError(
-                """wpt-lint-rules: unable to resolve the module at "{}".""".format(self.module_specifier)
+                f"""wpt-lint-rules: unable to resolve the module at "{self.module_specifier}"."""
             )
 
         for binding_name, value in module.__dict__.items():
@@ -72,7 +72,7 @@ class WPTLintRules(Directive):
 
         if len(definition_list.children) == 0:
             raise Exception(
-                """wpt-lint-rules: no linting rules found at "{}".""".format(self.module_specifier)
+                f"""wpt-lint-rules: no linting rules found at "{self.module_specifier}"."""
             )
 
         return [definition_list]

@@ -25,7 +25,7 @@ def main(request, response):
     server_state = request.server.stash.take(token)
     if not server_state:
         server_state = []
-    state = dict()
+    state = {}
     if not ignore:
         if inm:
             state[u"If-None-Match"] = isomorphic_decode(inm)

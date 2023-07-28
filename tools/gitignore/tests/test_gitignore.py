@@ -97,8 +97,7 @@ def test_path_filter(rules, input, expected):
     # Add some fake stat data
     for i, item in enumerate(input):
         repl = [input[i][0]]
-        for j in [1, 2]:
-            repl.append([(name, None) for name in input[i][j]])
+        repl.extend([(name, None) for name in input[i][j]] for j in [1, 2])
         input[i] = tuple(repl)
 
     for i, output in enumerate(f(input)):

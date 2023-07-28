@@ -15,9 +15,8 @@ def main(request, response):
       msg[u'requiredPolicy'] = isomorphic_decode(srdp)
       headers.append((b'Document-Policy', srdp))
 
-    frameId = request.GET.first(b'id',None)
-    if frameId:
-      msg[u'id'] = isomorphic_decode(frameId)
+    if frameId := request.GET.first(b'id', None):
+        msg[u'id'] = isomorphic_decode(frameId)
 
     content = u"""<!DOCTYPE html>
 <script>

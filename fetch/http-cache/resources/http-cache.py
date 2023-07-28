@@ -5,10 +5,15 @@ from base64 import b64decode
 
 from wptserve.utils import isomorphic_decode, isomorphic_encode
 
-NOTEHDRS = set([u'content-type', u'access-control-allow-origin', u'last-modified', u'etag'])
-NOBODYSTATUS = set([204, 304])
-LOCATIONHDRS = set([u'location', u'content-location'])
-DATEHDRS = set([u'date', u'expires', u'last-modified'])
+NOTEHDRS = {
+    u'content-type',
+    u'access-control-allow-origin',
+    u'last-modified',
+    u'etag',
+}
+NOBODYSTATUS = {204, 304}
+LOCATIONHDRS = {u'location', u'content-location'}
+DATEHDRS = {u'date', u'expires', u'last-modified'}
 
 def main(request, response):
     dispatch = request.GET.first(b"dispatch", None)
@@ -59,7 +64,7 @@ def handle_test(uuid, request, response):
     for header in config.get(u'response_headers', []):
         if header[0].lower() in LOCATIONHDRS: # magic locations
             if (len(header[1]) > 0):
-                header[1] = u"%s&target=%s" % (request.url, header[1])
+                header[1] = f"{request.url}&target={header[1]}"
             else:
                 header[1] = request.url
         if header[0].lower() in DATEHDRS and isinstance(header[1], int):  # magic dates
@@ -96,9 +101,7 @@ def handle_test(uuid, request, response):
     response.status = (code, phrase)
 
     content = config.get(u"response_body", uuid)
-    if code in NOBODYSTATUS:
-        return b""
-    return content
+    return b"" if code in NOBODYSTATUS else content
 
 
 def get_header(headers, header_name):

@@ -18,13 +18,8 @@ outputPath = os.path.join(os.path.dirname(directory), "gsubtest-lookup%d")
 
 baseCodepoint = 0xe000
 
-# -------
-# Features
-# -------
-
-f = open(featureList, "rb")
-text = f.read()
-f.close()
+with open(featureList, "rb") as f:
+    text = f.read()
 mapping = []
 for line in text.splitlines():
     line = line.strip()
@@ -49,16 +44,12 @@ def addGlyphToCFF(glyphName=None, program=None, private=None, globalSubrs=None, 
     topDict.charset.append(glyphName)
 
 def makeLookup1():
-    # make a variation of the shell TTX data
-    f = open(shellSourcePath)
-    ttxData = f.read()
-    f.close()
+    with open(shellSourcePath) as f:
+        ttxData = f.read()
     ttxData = ttxData.replace("__familyName__", "gsubtest-lookup1")
-    tempShellSourcePath = shellSourcePath + ".temp"
-    f = open(tempShellSourcePath, "wb")
-    f.write(ttxData)
-    f.close()
-
+    tempShellSourcePath = f"{shellSourcePath}.temp"
+    with open(tempShellSourcePath, "wb") as f:
+        f.write(ttxData)
     # compile the shell
     shell = TTFont(sfntVersion="OTTO")
     shell.importXML(tempShellSourcePath)
@@ -105,49 +96,49 @@ def makeLookup1():
     cp = baseCodepoint
     for index, tag in enumerate(features):
 
-    	# tag.pass
-    	glyphName = "%s.pass" % tag
-    	glyphOrder.append(glyphName)
-    	addGlyphToCFF(
-    		glyphName=glyphName,
-    		program=passGlyphProgram,
-    		private=private,
-    		globalSubrs=globalSubrs,
-    		charStringsIndex=charStringsIndex,
-    		topDict=topDict,
-            charStrings=charStrings
-    	)
-    	hmtx[glyphName] = passGlyphMetrics
+            	# tag.pass
+        glyphName = f"{tag}.pass"
+        glyphOrder.append(glyphName)
+        addGlyphToCFF(
+        	glyphName=glyphName,
+        	program=passGlyphProgram,
+        	private=private,
+        	globalSubrs=globalSubrs,
+        	charStringsIndex=charStringsIndex,
+        	topDict=topDict,
+        charStrings=charStrings
+        )
+        hmtx[glyphName] = passGlyphMetrics
 
-    	for table in cmap.tables:
-    		if table.format == 4:
-    			table.cmap[cp] = glyphName
-    		else:
-    			raise NotImplementedError("Unsupported cmap table format: %d" % table.format)
-    	cp += 1
+        for table in cmap.tables:
+        	if table.format == 4:
+        		table.cmap[cp] = glyphName
+        	else:
+        		raise NotImplementedError("Unsupported cmap table format: %d" % table.format)
+        cp += 1
 
-    	# tag.fail
-    	glyphName = "%s.fail" % tag
-    	glyphOrder.append(glyphName)
-    	addGlyphToCFF(
-    		glyphName=glyphName,
-    		program=failGlyphProgram,
-    		private=private,
-    		globalSubrs=globalSubrs,
-    		charStringsIndex=charStringsIndex,
-    		topDict=topDict,
-            charStrings=charStrings
-    	)
-    	hmtx[glyphName] = failGlyphMetrics
+            	# tag.fail
+        glyphName = f"{tag}.fail"
+        glyphOrder.append(glyphName)
+        addGlyphToCFF(
+        	glyphName=glyphName,
+        	program=failGlyphProgram,
+        	private=private,
+        	globalSubrs=globalSubrs,
+        	charStringsIndex=charStringsIndex,
+        	topDict=topDict,
+        charStrings=charStrings
+        )
+        hmtx[glyphName] = failGlyphMetrics
 
-    	for table in cmap.tables:
-    		if table.format == 4:
-    			table.cmap[cp] = glyphName
-    		else:
-    			raise NotImplementedError("Unsupported cmap table format: %d" % table.format)
+        for table in cmap.tables:
+        	if table.format == 4:
+        		table.cmap[cp] = glyphName
+        	else:
+        		raise NotImplementedError("Unsupported cmap table format: %d" % table.format)
 
         # bump this up so that the sequence is the same as the lookup 3 font
-    	cp += 3
+        cp += 3
 
     # set the glyph order
     shell.setGlyphOrder(glyphOrder)
@@ -207,10 +198,7 @@ def makeLookup1():
         subtable = SingleSubst()
         subtable.Format = 2
         subtable.LookupType = 1
-        subtable.mapping = {
-            "%s.pass" % tag : "%s.fail" % tag,
-            "%s.fail" % tag : "%s.pass" % tag,
-        }
+        subtable.mapping = {f"{tag}.pass": f"{tag}.fail", f"{tag}.fail": f"{tag}.pass"}
         lookup.SubTable.append(subtable)
 
     path = outputPath % 1 + ".otf"

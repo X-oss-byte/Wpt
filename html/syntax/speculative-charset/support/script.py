@@ -9,8 +9,7 @@ def main(request, response):
     token = request.GET[b"uuid"]
     character = request.GET[b"character"]
     old_character = b"NOT LOADED PREVIOUSLY";
-    from_stash = request.server.stash.take(token);
-    if from_stash:
+    if from_stash := request.server.stash.take(token):
         old_character = from_stash
     else:
         request.server.stash.put(token, character)

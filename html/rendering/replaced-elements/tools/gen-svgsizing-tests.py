@@ -49,7 +49,6 @@ except OSError:
 for placeholder in placeholders:
     for i, placeholderHeightAttr in enumerate(placeholderHeightAttrs):
         testContent = template.substitute(placeholder=placeholder, placeholderHeightAttr=placeholderHeightAttr, generator=sys.argv[0])
-        filename = "../svg-embedded-sizing/svg-in-%s-%s.html" % (placeholder, placeholderHeightAttrsDescriptions[i])
-        f = open(filename, "w")
-        f.write(testContent)
-        f.close()
+        filename = f"../svg-embedded-sizing/svg-in-{placeholder}-{placeholderHeightAttrsDescriptions[i]}.html"
+        with open(filename, "w") as f:
+            f.write(testContent)

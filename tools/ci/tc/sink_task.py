@@ -23,7 +23,7 @@ def check_task_statuses(task_ids, github_checks_outputter):
     for task in task_ids:
         status = queue.status(task)
         state = status['status']['state']
-        if state == 'failed' or state == 'exception':
+        if state in ['failed', 'exception']:
             logger.error(f'Task {task} failed with state "{state}"')
             failed_tasks.append(status)
         elif state != 'completed':
@@ -36,7 +36,9 @@ def check_task_statuses(task_ids, github_checks_outputter):
             # We need to make an additional call to get the task name.
             task_id = task['status']['taskId']
             task_name = queue.task(task_id)['metadata']['name']
-            github_checks_outputter.output('* `{}` failed with status `{}`'.format(task_name, task['status']['state']))
+            github_checks_outputter.output(
+                f"* `{task_name}` failed with status `{task['status']['state']}`"
+            )
     else:
         logger.info('All tasks completed successfully')
         if github_checks_outputter:

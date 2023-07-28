@@ -127,5 +127,4 @@ class XMLParser:
             self._parser.Parse("", True)
         except expat.error as v:
             _wrap_error(v)
-        tree = self._target.close()
-        return tree
+        return self._target.close()

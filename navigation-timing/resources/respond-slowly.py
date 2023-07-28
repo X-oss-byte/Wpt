@@ -24,6 +24,6 @@ def main(request, response):
     response.headers.set(b"Content-Type", b"text/html")
     response.write_status_headers()
     response.writer.write_content(head)
-    for i in range(100):
+    for _ in range(100):
         response.writer.write_content(b"1234567890")
         time.sleep(0.01)

@@ -40,7 +40,7 @@ def get_csp_value(value):
         return "worker-src 'self'"
     if value == 'worker-src-none':
         return "worker-src 'none'"
-    raise Exception('Invalid delivery_value: %s' % value)
+    raise Exception(f'Invalid delivery_value: {value}')
 
 def generate_payload(request):
     import_url = unquote(isomorphic_decode(request.GET[b'import_url']))

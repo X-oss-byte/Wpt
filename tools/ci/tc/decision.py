@@ -21,12 +21,12 @@ logger = logging.getLogger()
 
 
 def get_triggers(event):
-    # Set some variables that we use to get the commits on the current branch
-    ref_prefix = "refs/heads/"
     is_pr = "pull_request" in event
     branch = None
     if not is_pr and "ref" in event:
         branch = event["ref"]
+        # Set some variables that we use to get the commits on the current branch
+        ref_prefix = "refs/heads/"
         if branch.startswith(ref_prefix):
             branch = branch[len(ref_prefix):]
 
@@ -70,7 +70,7 @@ def get_run_jobs(event):
                          event["pull_request"]["head"]["sha"]
                          if "pull_request" in event
                          else event["after"])
-    logger.info("Looking for changes in range %s" % revish)
+    logger.info(f"Looking for changes in range {revish}")
     paths = jobs.get_paths(revish=revish)
     logger.info("Found changes in paths:%s" % "\n".join(paths))
     path_jobs = jobs.get_jobs(paths)
@@ -93,9 +93,8 @@ def get_extra_jobs(event):
     regexp = re.compile(r"\s*tc-jobs:(.*)$")
 
     for line in body.splitlines():
-        m = regexp.match(line)
-        if m:
-            items = m.group(1)
+        if m := regexp.match(line):
+            items = m[1]
             for item in items.split(","):
                 jobs.add(item.strip())
             break
@@ -147,22 +146,22 @@ def get_fetch_rev(event):
     is_pr, _ = get_triggers(event)
     if is_pr:
         # Try to get the actual rev so that all non-decision tasks are pinned to that
-        rv = ["refs/pull/%s/merge" % event["pull_request"]["number"]]
+        rv = [f'refs/pull/{event["pull_request"]["number"]}/merge']
         # For every PR GitHub maintains a 'head' branch with commits from the
         # PR, and a 'merge' branch containing a merge commit between the base
         # branch and the PR.
         for ref_type in ["head", "merge"]:
-            ref = "refs/pull/%s/%s" % (event["pull_request"]["number"], ref_type)
+            ref = f'refs/pull/{event["pull_request"]["number"]}/{ref_type}'
             sha = None
             try:
                 output = subprocess.check_output(["git", "ls-remote", "origin", ref])
             except subprocess.CalledProcessError:
                 import traceback
                 logger.error(traceback.format_exc())
-                logger.error("Failed to get commit sha1 for %s" % ref)
+                logger.error(f"Failed to get commit sha1 for {ref}")
             else:
                 if not output:
-                    logger.error("Failed to get commit for %s" % ref)
+                    logger.error(f"Failed to get commit for {ref}")
                 else:
                     sha = output.decode("utf-8").split()[0]
             rv.append(sha)
@@ -185,12 +184,11 @@ def build_full_command(event, task):
     }
 
     options = task.get("options", {})
-    options_args = []
-    options_args.append("--ref=%s" % fetch_ref)
+    options_args = [f"--ref={fetch_ref}"]
     if head_sha is not None:
-        options_args.append("--head-rev=%s" % head_sha)
+        options_args.append(f"--head-rev={head_sha}")
     if merge_sha is not None:
-        options_args.append("--merge-rev=%s" % merge_sha)
+        options_args.append(f"--merge-rev={merge_sha}")
     if options.get("oom-killer"):
         options_args.append("--oom-killer")
     if options.get("xvfb"):
@@ -201,22 +199,21 @@ def build_full_command(event, task):
         options_args.append("--hosts")
     # Check out the expected SHA unless it is overridden (e.g. to base_head).
     if options.get("checkout"):
-        options_args.append("--checkout=%s" % options["checkout"])
-    for browser in options.get("browser", []):
-        options_args.append("--browser=%s" % browser)
+        options_args.append(f'--checkout={options["checkout"]}')
+    options_args.extend(
+        f"--browser={browser}" for browser in options.get("browser", [])
+    )
     if options.get("channel"):
-        options_args.append("--channel=%s" % options["channel"])
+        options_args.append(f'--channel={options["channel"]}')
     if options.get("install-certificates"):
         options_args.append("--install-certificates")
 
     cmd_args["options_str"] = " ".join(str(item) for item in options_args)
 
-    install_packages = task.get("install")
-    if install_packages:
+    if install_packages := task.get("install"):
         install_items = ["apt update -qqy"]
-        install_items.extend("apt install -qqy %s" % item
-                             for item in install_packages)
-        cmd_args["install_str"] = "\n".join("sudo %s;" % item for item in install_items)
+        install_items.extend(f"apt install -qqy {item}" for item in install_packages)
+        cmd_args["install_str"] = "\n".join(f"sudo {item};" for item in install_items)
 
     return ["/bin/bash",
             "--login",
@@ -345,7 +342,7 @@ def get_event(queue, event_path):
             with open(event_path) as f:
                 event_str = f.read()
         except OSError:
-            logger.error("Missing event file at path %s" % event_path)
+            logger.error(f"Missing event file at path {event_path}")
             raise
     elif "TASK_EVENT" in os.environ:
         event_str = os.environ["TASK_EVENT"]
@@ -371,8 +368,7 @@ def decide(event):
                                                             set(scheduled_tasks.keys()))))
     logger.info("SCHEDULED TASKS:\n  %s" % "\n  ".join(sorted(scheduled_tasks.keys())))
 
-    task_id_map = build_task_graph(event, all_tasks, scheduled_tasks)
-    return task_id_map
+    return build_task_graph(event, all_tasks, scheduled_tasks)
 
 
 def get_parser():

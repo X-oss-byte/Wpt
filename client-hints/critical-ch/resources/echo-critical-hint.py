@@ -36,15 +36,15 @@ def main(request, response):
       result = "PASS"
 
     token = request.GET.first(b"token", None)
-    if(token is not None):
-      with request.server.stash.lock:
-        count = request.server.stash.take(token)
-        if(count == None):
-          count = 1
-        else:
-          count += 1
-        request.server.stash.put(token, count)
-        result = str(count)
+    if (token is not None):
+        with request.server.stash.lock:
+            count = request.server.stash.take(token)
+            if count is None:
+                count = 1
+            else:
+                count += 1
+            request.server.stash.put(token, count)
+            result = str(count)
 
     if b"sec-ch-viewport-width" in request.headers and b"viewport-width" in request.headers:
       result = "MISMATCH"

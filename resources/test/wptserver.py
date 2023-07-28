@@ -19,15 +19,15 @@ class WPTServer(object):
             self.http_port = config["ports"]["http"][0]
             self.https_port = config["ports"]["https"][0]
 
-        self.base_url = 'http://%s:%s' % (self.host, self.http_port)
-        self.https_base_url = 'https://%s:%s' % (self.host, self.https_port)
+        self.base_url = f'http://{self.host}:{self.http_port}'
+        self.https_base_url = f'https://{self.host}:{self.https_port}'
 
     def start(self, ssl_context):
         self.devnull = open(os.devnull, 'w')
         wptserve_cmd = [os.path.join(self.wpt_root, 'wpt'), 'serve']
         if sys.executable:
-            wptserve_cmd[0:0] = [sys.executable]
-        self.logger.info('Executing %s' % ' '.join(wptserve_cmd))
+            wptserve_cmd[:0] = [sys.executable]
+        self.logger.info(f"Executing {' '.join(wptserve_cmd)}")
         self.proc = subprocess.Popen(
             wptserve_cmd,
             stderr=self.devnull,
@@ -47,7 +47,7 @@ class WPTServer(object):
             except urllib.error.URLError:
                 pass
 
-        raise Exception('Could not start wptserve on %s' % self.base_url)
+        raise Exception(f'Could not start wptserve on {self.base_url}')
 
     def stop(self):
         self.proc.terminate()
@@ -55,4 +55,4 @@ class WPTServer(object):
         self.devnull.close()
 
     def url(self, abs_path):
-        return self.https_base_url + '/' + os.path.relpath(abs_path, self.wpt_root)
+        return f'{self.https_base_url}/{os.path.relpath(abs_path, self.wpt_root)}'

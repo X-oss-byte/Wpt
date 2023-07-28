@@ -20,8 +20,5 @@ def main(request, response):
                (b'Pragma', b'no-cache'),
                (b'Content-Type', b'application/javascript')]
 
-    skipWaiting = u''
-    if b'skip-waiting' in request.GET:
-        skipWaiting = u'skipWaiting();'
-
-    return headers, u'/* %s %s */ %s %s' % (time.time(), random.random(), skipWaiting, body)
+    skipWaiting = u'skipWaiting();' if b'skip-waiting' in request.GET else u''
+    return headers, f'/* {time.time()} {random.random()} */ {skipWaiting} {body}'

@@ -101,31 +101,38 @@ def main(request, response):
     elif type == b'svg':
         return [(b"Content-Type", b"image/svg+xml")], b"<svg xmlns='http://www.w3.org/2000/svg'>%s</svg>" % isomorphic_encode(q)
     elif type == b'xmlstylesheet_css':
-        return ([(b"Content-Type", b"application/xhtml+xml; charset=%s" % encoding)],
-                (u"""<?xml-stylesheet href="?q=&#x00E5;&amp;type=css&amp;encoding=%s"?><html xmlns="http://www.w3.org/1999/xhtml"/>""" % isomorphic_decode(encoding))
-                .encode(isomorphic_decode(encoding)))
+        return [
+            (b"Content-Type", b"application/xhtml+xml; charset=%s" % encoding)
+        ], f"""<?xml-stylesheet href="?q=&#x00E5;&amp;type=css&amp;encoding={isomorphic_decode(encoding)}"?><html xmlns="http://www.w3.org/1999/xhtml"/>""".encode(
+            isomorphic_decode(encoding)
+        )
     elif type == b'png':
-        if q == u'%E5':
-            image = u'green-1x1.png'
+        if q == u'%3F':
+            image = u'green-16x16.png'
         elif q == u'%C3%A5':
             image = u'green-2x2.png'
-        elif q == u'%3F':
-            image = u'green-16x16.png'
+        elif q == u'%E5':
+            image = u'green-1x1.png'
         else:
             image = u'green-256x256.png'
         rv = open(os.path.join(request.doc_root, u"images", image), "rb").read()
         return [(b"Content-Type", b"image/png")], rv
     elif type == b'video':
         ext = request.GET[b'ext']
-        if q == u'%E5':
-            video = u'A4' # duration: 3
+        if q == u'%3F':
+            video = u'green-at-15' # duration: 30
         elif q == u'%C3%A5':
             video = u'movie_5' # duration: 5
-        elif q == u'%3F':
-            video = u'green-at-15' # duration: 30
+        elif q == u'%E5':
+            video = u'A4' # duration: 3
         else:
             video = u'movie_300' # duration: 300
-        rv = open(os.path.join(request.doc_root, u"media", u"%s.%s" % (video, isomorphic_decode(ext))), "rb").read()
+        rv = open(
+            os.path.join(
+                request.doc_root, u"media", f"{video}.{isomorphic_decode(ext)}"
+            ),
+            "rb",
+        ).read()
         if ext == b'ogv':
             ext = b'ogg'
         return [(b"Content-Type", b"video/%s" % ext)], rv
